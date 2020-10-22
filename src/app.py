@@ -1,5 +1,7 @@
+import src.utils as utils
 import dash
 import dash_core_components as dcc
+import dash_table
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 import plotly.express as px
@@ -9,6 +11,7 @@ from dash.dependencies import Input, Output, State
 app = dash.Dash(external_stylesheets=[dbc.themes.DARKLY])
 app.title = 'Movie Analytics'
 app.config['suppress_callback_exceptions'] = True
+dataframe = pd.DataFrame()
 
 
 @app.callback(
@@ -16,9 +19,17 @@ app.config['suppress_callback_exceptions'] = True
     Input('button1', 'n_clicks'),
 )
 def update_output(n_clicks):
+    global dataframe
     if n_clicks is not None:
         print("RECEIVED REQUEST FROM CLIENT")
-        return 'Hello from Server!'
+        dataframe = utils.parse_csv("../data/keywords.csv", True)
+        return [dash_table.DataTable(
+            columns=[{"name": i, "id": i} for i in dataframe.columns],
+            data=dataframe.to_dict('records'),
+            filter_action="native",
+            sort_action="native",
+            css=[{'selector': '.row', 'rule': 'margin: 0'}],
+        )]
 
 
 @app.callback(
@@ -52,7 +63,6 @@ navbar = dbc.NavbarSimple(
     dark=True,
 )
 
-
 app.layout = html.Div(children=[
     navbar,
     html.Div(
@@ -62,8 +72,9 @@ app.layout = html.Div(children=[
             '''),
             html.Hr(),
             dbc.Button('Send Request to Server ', id='button1', color="info", className="mr-1"),
-            html.Div(id='output-container-button',
-                     children='')
+            html.Div(id='output-container-button', children=[]),
+            html.Hr(),
+
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
