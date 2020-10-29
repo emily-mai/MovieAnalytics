@@ -1,4 +1,4 @@
-import src.utils as utils
+import utils as utils
 import dash
 import dash_core_components as dcc
 import dash_table
@@ -166,6 +166,17 @@ app.layout = html.Div(children=[
     )
 
 ])
+
+###############################################
+#Ricardo added code for 'backup' feature
+df = pd.DataFrame(dataframe)
+
+# saving the dataframe
+df.to_csv('Backup.csv')
+###############################################
+
+
+
 
 if __name__ == '__main__':
     # dataframe = utils.parse_csv("../data/keywords.csv", True)
