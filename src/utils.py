@@ -80,18 +80,31 @@ def search(dataframe, query):
     :param query: query string to filter data
     :return: dataframe of query results
     """
-    # split multiple queries and process sequentially
-    filtering_expressions = query.split(' && ')
-    for filter_part in filtering_expressions:
-        col_name, operator, filter_value = split_filter_part(filter_part)
-        print(col_name, operator, filter_value)
-        # these operators match pandas series operator method names
-        if operator in ('eq', 'ne', 'lt', 'le', 'gt', 'ge'):
-            dataframe = dataframe.loc[getattr(dataframe[col_name], operator)(filter_value)]
-        elif operator == 'contains':
-            dataframe = dataframe.loc[dataframe[col_name].str.contains(filter_value)]
-        elif operator == 'datestartswith':
-            # this is a simplification of the front-end filtering logic,
-            # only works with complete fields in standard format
-            dataframe = dataframe.loc[dataframe[col_name].str.startswith(filter_value)]
+    if query is not None:
+        # split multiple queries and process sequentially
+        filtering_expressions = query.split(' && ')
+        for filter_part in filtering_expressions:
+            col_name, operator, filter_value = split_filter_part(filter_part)
+            print(col_name, operator, filter_value)
+            # these operators match pandas series operator method names
+            if operator in ('eq', 'ne', 'lt', 'le', 'gt', 'ge'):
+                dataframe = dataframe.loc[getattr(dataframe[col_name], operator)(filter_value)]
+            elif operator == 'contains':
+                dataframe = dataframe.loc[dataframe[col_name].str.contains(filter_value)]
+            elif operator == 'datestartswith':
+                # this is a simplification of the front-end filtering logic,
+                # only works with complete fields in standard format
+                dataframe = dataframe.loc[dataframe[col_name].str.startswith(filter_value)]
     return dataframe
+
+
+# def update(dataframe, index, column, value):
+#     """
+#     :param dataframe: dataframe object to perform update on
+#     :param index: data index that user wants to edit
+#     :param column: data column that the user wants to edit
+#     :param value: user input for editing
+#     """
+#     # dataframe parameter to get access to movie listings
+#     dataframe.at[index, column] = value
+#     return dataframe

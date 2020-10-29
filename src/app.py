@@ -11,7 +11,7 @@ from dash.dependencies import Input, Output, State
 app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
 app.title = 'Movie Analytics'
 app.config['suppress_callback_exceptions'] = True
-dataframe = utils.parse_csv("../data/keywords.csv", True)
+dataframe = utils.parse_csv("../data/movies_metadata.csv", True)
 
 
 def display_table(dataset):
@@ -25,6 +25,7 @@ def display_table(dataset):
         page_size=500,
         page_current=0,
         # sort_action="native",
+        row_deletable = True,
         style_data_conditional=[
             {
                 'if': {'row_index': 'odd'},
@@ -55,8 +56,8 @@ def display_table(dataset):
 
 @app.callback(
     Output('output-container-button', "children"),
-    Input('button1', "n_clicks"),
-    State('search-bar', "value"))
+    [Input('button1', "n_clicks")],
+    [State('search-bar', "value")])
 def update_table(n_clicks, value):
     if n_clicks is not None:
         print(value)
@@ -73,6 +74,56 @@ def toggle_navbar_collapse(n, is_open):
     if n:
         return not is_open
     return is_open
+
+
+@app.callback(
+    Output("edit-modal-div", "children"),
+    [Input("table", "active_cell")]
+)
+def edit_row(active_cell):
+    if active_cell is not None:
+        row = active_cell.get('row')
+        inputs = []
+        for column in dataframe.columns:
+            input_id = "edit-row-input-" + column
+            current_value = dataframe.at[row, column]
+            input_group = dbc.InputGroup(
+                [
+                    dbc.InputGroupAddon(column, addon_type="prepend"),
+                    dbc.Input(id=input_id, value=current_value),
+                ],
+                className="mb-3",
+                key=row
+            )
+            inputs.append(input_group)
+        modal = dbc.Modal(
+            [
+                dbc.ModalHeader("Edit"),
+                dbc.ModalBody(id='edit-body', children=inputs),
+                dbc.ModalFooter(dbc.Button("Submit", id="edit-submit", className="ml-auto")),
+            ],
+            id="edit-modal",
+            is_open=True
+        )
+        return modal
+
+
+@app.callback(
+    Output("table", "data"),
+    [Input("edit-submit", "n_clicks")],
+    [State("edit-body", "children")]
+)
+def submit_edit(n_clicks, inputs):
+    if n_clicks is not None:
+        row_index = None
+        row = []
+        for input_group in inputs:
+            input = input_group.get('props').get('children')[1].get('props')
+            input_value = input.get('value')
+            row_index = input_group.get('props').get('key')
+            row.append(input_value)
+        dataframe.loc[row_index] = row
+        return dataframe.to_dict('records')
 
 
 navbar = dbc.NavbarSimple(
@@ -95,6 +146,7 @@ navbar = dbc.NavbarSimple(
     dark=True,
 )
 
+
 app.layout = html.Div(children=[
     navbar,
     html.Div(
@@ -103,8 +155,9 @@ app.layout = html.Div(children=[
                 Welcome! This is the homepage of our movie analytics webapp!
             '''),
             html.Hr(),
+            html.Div(id="edit-modal-div", children=[]),
             dbc.Input(id="search-bar", placeholder="Column name, operator, value", type="text"),
-            dbc.Button('Search', id='button1', color="info", className="mr-1"),
+            dbc.Button('Display Table', id='button1', color="info", className="mr-1"),
             html.Div(id='output-container-button', children=[]),
             html.Hr(),
 
