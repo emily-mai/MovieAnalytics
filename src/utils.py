@@ -1,7 +1,7 @@
 import pandas as pd
 import re
 # this line can be commented out --> tells run time of for loops
-from tqdm import tqdm
+# from tqdm import tqdm
 
 
 # csv parser function
@@ -22,7 +22,7 @@ def parse_csv(filepath, contains_header=False):
             headers = file.readline().strip('\n').split(',')
         # use for loop to read in rest of file
         # split data into corresponding columns using regex expression
-        for line in tqdm(file):
+        for line in file:
             line = line.strip('\n')
             words = re.split(r',(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))', line)
             data.append(words)
@@ -108,3 +108,26 @@ def search(dataframe, query):
 #     # dataframe parameter to get access to movie listings
 #     dataframe.at[index, column] = value
 #     return dataframe
+
+def insert(dataframe, title, budget, revenue, original_language, release_date, overview):
+    """
+    ;param dataframe: dataframe object to be inserted into
+    ;param title, budget, revenue, original_language, release_date, overview: new data to insert into the data frame
+    ;return: dataframe with newly inserted data
+
+    """
+    # create a new dataframe with column names matching that of original dataframe
+    new_entry = {
+        'title': [title],
+        'budget': [budget],
+        'revenue': [revenue],
+        'original_language': [original_language],
+        'release_date': [release_date],
+        'overview': [overview]
+    }
+
+    dataframe_temp = pd.DataFrame[new_entry]
+    # append the new dataframe(row) of data into the original dataframe ignoring indices
+    dataframe.append(dataframe_temp, ignore_index=True)
+
+    return dataframe
