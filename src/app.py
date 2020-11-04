@@ -1,4 +1,4 @@
-import utils as utils
+import src.utils as utils
 import dash
 import dash_core_components as dcc
 import dash_table
@@ -14,21 +14,21 @@ import io
 app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
 app.title = 'Movie Analytics'
 app.config['suppress_callback_exceptions'] = True
-dataframe = utils.parse_csv("../data/movies_metadata.csv", True)
+metadata = utils.load_data()
 
 
-def display_table(dataset):
+def display_table(df):
     table = dash_table.DataTable(
         id='table',
-        columns=[{"name": i, "id": i} for i in dataset.columns],
-        data=dataset.to_dict('records'),
+        columns=[{"name": i, "id": i} for i in df.columns],
+        data=df.to_dict('records'),
         css=[{'selector': '.row', 'rule': 'margin: 0'}],
         fixed_rows={'headers': True},
         # page_action='custom',
-        page_size=500,
+        page_size=50,
         page_current=0,
         # sort_action="native",
-        row_deletable = True,
+        row_deletable=True,
         style_data_conditional=[
             {
                 'if': {'row_index': 'odd'},
@@ -50,7 +50,7 @@ def display_table(dataset):
             {
                 column: {'value': str(value), 'type': 'markdown'}
                 for column, value in row.items()
-            } for row in dataset.to_dict('rows')
+            } for row in df.to_dict('rows')
         ],
         tooltip_duration=None
     )
@@ -64,7 +64,7 @@ def display_table(dataset):
 def update_table(n_clicks, value):
     if n_clicks is not None:
         print(value)
-        result = utils.search(dataframe, query=value)
+        result = utils.search(metadata, query=value)
         return display_table(result)
 
 
@@ -87,9 +87,9 @@ def edit_row(active_cell):
     if active_cell is not None:
         row = active_cell.get('row')
         inputs = []
-        for column in dataframe.columns:
+        for column in metadata.columns:
             input_id = "edit-row-input-" + column
-            current_value = dataframe.at[row, column]
+            current_value = metadata.at[row, column]
             input_group = dbc.InputGroup(
                 [
                     dbc.InputGroupAddon(column, addon_type="prepend"),
@@ -121,12 +121,12 @@ def submit_edit(n_clicks, inputs):
         row_index = None
         row = []
         for input_group in inputs:
-            input = input_group.get('props').get('children')[1].get('props')
-            input_value = input.get('value')
+            input_dict = input_group.get('props').get('children')[1].get('props')
+            input_value = input_dict.get('value')
             row_index = input_group.get('props').get('key')
             row.append(input_value)
-        dataframe.loc[row_index] = row
-        return dataframe.to_dict('records')
+        metadata.loc[row_index] = row
+        return metadata.to_dict('records')
 
 
 navbar = dbc.NavbarSimple(
@@ -149,10 +149,12 @@ navbar = dbc.NavbarSimple(
     dark=True,
 )
 
+
 def parse_contents(contents, filename, date):
     content_type, content_string = contents.split(',')
 
     decoded = base64.b64decode(content_string)
+    df = pd.DataFrame()
     try:
         if 'csv' in filename:
             # Assume that the user uploaded a CSV file
@@ -188,7 +190,6 @@ def parse_contents(contents, filename, date):
     ])
 
 
-
 @app.callback(Output('output-data-upload', 'children'),
               [Input('upload-data', 'contents')],
               [State('upload-data', 'filename'),
@@ -220,28 +221,27 @@ app.layout = html.Div(children=[
     ),
 
     html.Div([
-    dcc.Upload(
-        id='upload-data',
-        children=html.Div([
-            'Drag and Drop or ',
-            html.A('Select Files')
-        ]),
-        style={
-            'width': '100%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '1px',
-            'borderStyle': 'dashed',
-            'borderRadius': '5px',
-            'textAlign': 'center',
-            'margin': '10px'
-        },
-        # Allow multiple files to be uploaded
-        multiple=True
-    ),
-    html.Div(id='output-data-upload'),
-])
-
+        dcc.Upload(
+            id='upload-data',
+            children=html.Div([
+                'Drag and Drop or ',
+                html.A('Select Files')
+            ]),
+            style={
+                'width': '100%',
+                'height': '60px',
+                'lineHeight': '60px',
+                'borderWidth': '1px',
+                'borderStyle': 'dashed',
+                'borderRadius': '5px',
+                'textAlign': 'center',
+                'margin': '10px'
+            },
+            # Allow multiple files to be uploaded
+            multiple=True
+        ),
+        html.Div(id='output-data-upload'),
+    ])
 ])
 
 if __name__ == '__main__':
