@@ -25,7 +25,13 @@ def parse_csv(filepath, contains_header=False):
         for line in tqdm(file):
             line = line.strip('\n')
             words = re.split(r',(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))', line)
-            data.append(words)
+            row = []
+            for word in words:
+                if word.isdigit():
+                    row.append(int(word))
+                else:
+                    row.append(word)
+            data.append(row)
     # case for when file contains header when creating dataframe
     if contains_header:
         dataframe = pd.DataFrame(data, columns=headers)
@@ -52,6 +58,7 @@ def split_filter_part(filter_part):
     :param filter_part: string formatted as "column operator value"
     :return: filter_part formatted as list of strings, if contains operator else return empty list
     """
+    # TODO: fix bug for search (problem with operators)
     # only split if operator is in the search input
     for operator_type in operators:
         for operator in operator_type:
@@ -72,6 +79,46 @@ def split_filter_part(filter_part):
                 # but we don't want these later
                 return name, operator_type[0].strip(), value
     return [None] * 3
+
+
+def load_data():
+    meta = parse_csv("../data/movies_metadata.csv", True).drop_duplicates('id')
+    kwords = parse_csv("../data/keywords.csv", True).drop_duplicates('id')
+
+    meta.set_index('id', inplace=True)
+    kwords.set_index('id', inplace=True)
+
+    meta = meta.drop(['adult', 'belongs_to_collection', 'imdb_id', 'title', 'video'], axis=1)
+    meta = pd.concat([meta, kwords], axis=1, join='inner')
+    meta = clean_dataframe(meta,
+                           ['genres', 'keywords', 'production_companies', 'production_countries', 'spoken_languages'])
+    return meta
+
+
+def clean_dataframe(df, columns):
+    """
+    :param df: dataframe object to clean
+    :param columns: list of df columns to clean (i.e. keywords, genres)
+    :return: cleaned up version of dataframe
+    """
+    for column in columns:
+        keywords_list = df[column]
+        clean = []
+        for string in keywords_list:
+            new_row = []
+            if string is not None:
+                try:
+                    row = list(eval(string.strip('"')))
+                except SyntaxError:
+                    continue
+                for dictionary in row:
+                    dictionary_value = dictionary.get('name')
+                    new_row.append(dictionary_value)
+            clean.append(new_row)
+        df.drop(columns=[column], inplace=True)
+        clean_column = pd.Series(clean)
+        df[column] = clean_column
+    return df
 
 
 def search(dataframe, query):
