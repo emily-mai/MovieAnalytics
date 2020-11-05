@@ -7,6 +7,7 @@ import dash_bootstrap_components as dbc
 import plotly.express as px
 import pandas as pd
 from dash.dependencies import Input, Output, State
+import csv
 
 app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
 app.title = 'Movie Analytics'
@@ -167,16 +168,23 @@ app.layout = html.Div(children=[
 
 ])
 
-###############################################
-#Ricardo added code for 'backup' feature
+# ##############################################################################################
+# #Ricardo added code for 'backup' feature        ##############################################
+# First I load our dataframe into 'df' and then   ##############################################
+# convert it to a list I call movies_list         ##############################################
+
 df = pd.DataFrame(dataframe)
+movies_list = df.values.tolist()
 
-# saving the dataframe
-df.to_csv('Backup.csv')
-###############################################
+#Once it has been converted, I then open a new file 'newFile.csv' and
+#create a csvwriter called moviewriter.
+# Then I use moviewriter to write the list to 'newFile.csv'.
 
-
-
+with open('newFile.csv', 'w', encoding='utf-8', newline='') as csvfile:
+    moviewriter = csv.writer(csvfile, delimiter=',',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    moviewriter.writerows(movies_list)
+# ##############################################################################################
 
 if __name__ == '__main__':
     # dataframe = utils.parse_csv("../data/keywords.csv", True)
