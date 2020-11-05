@@ -131,16 +131,29 @@ def submit_edit(n_clicks, inputs):
 
 navbar = dbc.NavbarSimple(
     children=[
-        dbc.NavItem(dbc.NavLink("Page 1", href="#")),
+        dbc.NavItem(dbc.NavLink("Homepage", href="/")),
         dbc.DropdownMenu(
             children=[
-                dbc.DropdownMenuItem("More pages", header=True),
-                dbc.DropdownMenuItem("Page 2", href="#"),
-                dbc.DropdownMenuItem("Page 3", href="#"),
+                dbc.DropdownMenuItem("Correlations", header=True),
+                dbc.DropdownMenuItem("Rating & Budget", href="/rating-budget"),
+                dbc.DropdownMenuItem("Rating & Revenue", href="/rating-revenue"),
+                dbc.DropdownMenuItem("Rating & Genre", href="/rating-genre"),
+                dbc.DropdownMenuItem("Rating & Release Time", href="/rating-release"),
+                dbc.DropdownMenuItem("Popularity & Released Language", href="/popularity-language"),
+                dbc.DropdownMenuItem(divider=True),
+                dbc.DropdownMenuItem("Average", header=True),
+                dbc.DropdownMenuItem("Revenue", href="/avg-revenue"),
+                dbc.DropdownMenuItem("Rating", href="/avg-rating"),
+                dbc.DropdownMenuItem("Budget", href="/avg-budget"),
+                dbc.DropdownMenuItem(divider=True),
+                dbc.DropdownMenuItem("Superlatives", header=True),
+                dbc.DropdownMenuItem("Most Popular Movies", href="/popular-movies"),
+                dbc.DropdownMenuItem("Most Common Keywords", href="/common-keywords"),
+                dbc.DropdownMenuItem("Most Popular Release Times", href="/popular-release"),
             ],
             nav=True,
             in_navbar=True,
-            label="More",
+            label="Analytics",
         ),
     ],
     brand="Movie Analytics",
@@ -202,45 +215,176 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
         return children
 
 
-app.layout = html.Div(children=[
-    navbar,
-    html.Div(
+def display_home():
+    return html.Div(
         children=[
             html.H3(children='''
-                Welcome! This is the homepage of our movie analytics webapp!
+                Welcome!
             '''),
             html.Hr(),
             html.Div(id="edit-modal-div", children=[]),
-            dbc.Input(id="search-bar", placeholder="Column name, operator, value", type="text"),
-            dbc.Button('Display Table', id='button1', color="info", className="mr-1"),
+            dbc.Row(children=[
+                dbc.Col(dbc.Input(id="search-bar", placeholder="Column name, operator, value", type="text"), width=9),
+                dbc.Col(dbc.Button('Search', id='button1', color="info", className="mr-1", block=True),
+                        width={"size": 1, "order": "1"}),
+                dbc.Col(dbc.Button('Insert', id='button2', color="info", className="mr-1", block=True),
+                        width={"size": 1, "order": "2"}),
+                dbc.Col(dbc.Button('Backup', id='button3', color="info", className="mr-1", block=True),
+                        width={"size": 1, "order": "last"}),
+            ]),
             html.Div(id='output-container-button', children=[]),
-            html.Hr(),
-
+            html.Hr()
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
-    ),
+    )
 
+
+def display_rating_budget():
+    return html.Div(
+        children=[
+            html.H3('Correlation between Rating and Budget'),
+            html.Hr(),
+        ],
+        style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
+    )
+
+
+def display_rating_revenue():
+    return html.Div(
+        children=[
+            html.H3('Correlation between Rating and Revenue'),
+            html.Hr(),
+        ],
+        style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
+    )
+
+
+def display_rating_genre():
+    return html.Div(
+        children=[
+            html.H3('Correlation between Rating and Genre'),
+            html.Hr(),
+        ],
+        style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
+    )
+
+
+def display_rating_release_time():
+    return html.Div(
+        children=[
+            html.H3('Correlation between Rating and Release Time'),
+            html.Hr(),
+        ],
+        style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
+    )
+
+
+def display_popularity_released_language():
+    return html.Div(
+        children=[
+            html.H3('Correlation between Popularity and Released Language'),
+            html.Hr(),
+        ],
+        style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
+    )
+
+
+def display_average_revenue():
+    return html.Div(
+        children=[
+            html.H3('Average Revenue'),
+            html.Hr(),
+        ],
+        style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
+    )
+
+def display_average_rating():
+    return html.Div(
+        children=[
+            html.H3('Average Rating'),
+            html.Hr(),
+        ],
+        style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
+    )
+
+
+def display_average_budget():
+    return html.Div(
+        children=[
+            html.H3('Average Budget'),
+            html.Hr(),
+        ],
+        style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
+    )
+
+
+def display_popular_movies():
+    return html.Div(
+        children=[
+            html.H3('Most Popular Movies'),
+            html.Hr(),
+        ],
+        style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
+    )
+
+
+def display_common_keywords():
+    return html.Div(
+        children=[
+            html.H3('Most Common Keywords'),
+            html.Hr(),
+        ],
+        style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
+    )
+
+
+def display_popular_release_time():
+    return html.Div(
+        children=[
+            html.H3('Most Popular Release Times'),
+            html.Hr(),
+        ],
+        style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
+    )
+
+
+@app.callback(Output('page-content', 'children'),
+              [Input('url', 'pathname')])
+def display_page(pathname):
+    print(pathname)
+    if pathname == "/rating-budget":
+        page = display_rating_budget()
+    elif pathname == "/rating-revenue":
+        page = display_rating_revenue()
+    elif pathname == "/rating-genre":
+        page = display_rating_genre()
+    elif pathname == "/rating-release":
+        page = display_rating_release_time()
+    elif pathname == "/popularity-language":
+        page = display_popularity_released_language()
+    elif pathname == "/avg-revenue":
+        page = display_average_revenue()
+    elif pathname == "/avg-rating":
+        page = display_average_rating()
+    elif pathname == "/avg-budget":
+        page = display_average_budget()
+    elif pathname == "/popular-movies":
+        page = display_popular_movies()
+    elif pathname == "/common-keywords":
+        page = display_common_keywords()
+    elif pathname == "/popular-release":
+        page = display_popular_release_time()
+    else:
+        page = display_home()
+    return page
+
+
+app.layout = html.Div(children=[
+    navbar,
     html.Div([
-        dcc.Upload(
-            id='upload-data',
-            children=html.Div([
-                'Drag and Drop or ',
-                html.A('Select Files')
-            ]),
-            style={
-                'width': '100%',
-                'height': '60px',
-                'lineHeight': '60px',
-                'borderWidth': '1px',
-                'borderStyle': 'dashed',
-                'borderRadius': '5px',
-                'textAlign': 'center',
-                'margin': '10px'
-            },
-            # Allow multiple files to be uploaded
-            multiple=True
-        ),
-        html.Div(id='output-data-upload'),
+        # represents the URL bar, doesn't render anything
+        dcc.Location(id='url', refresh=False),
+        html.Div(id='page-content')
     ])
 ])
 
