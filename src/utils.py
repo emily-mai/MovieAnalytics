@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import re
 # this line can be commented out --> tells run time of for loops
 from tqdm import tqdm
@@ -32,6 +33,7 @@ def parse_csv(filepath, contains_header=False):
                 else:
                     row.append(word)
             data.append(row)
+            break
     # case for when file contains header when creating dataframe
     if contains_header:
         dataframe = pd.DataFrame(data, columns=headers)
@@ -88,8 +90,8 @@ def load_data():
     meta.set_index('id', inplace=True)
     kwords.set_index('id', inplace=True)
 
-    meta = meta.drop(['adult', 'belongs_to_collection', 'imdb_id', 'title', 'video'], axis=1)
-    meta = pd.concat([meta, kwords], axis=1, join='inner')
+    meta = pd.concat([meta, kwords], axis=1, join='inner').reset_index()
+    meta = meta.drop(['adult', 'belongs_to_collection', 'imdb_id', 'title', 'video', 'id'], axis=1)
     meta = clean_dataframe(meta,
                            ['genres', 'keywords', 'production_companies', 'production_countries', 'spoken_languages'])
     return meta
@@ -110,14 +112,13 @@ def clean_dataframe(df, columns):
                 try:
                     row = list(eval(string.strip('"')))
                 except SyntaxError:
-                    continue
+                    row = []
                 for dictionary in row:
                     dictionary_value = dictionary.get('name')
                     new_row.append(dictionary_value)
             clean.append(new_row)
         df.drop(columns=[column], inplace=True)
-        clean_column = pd.Series(clean)
-        df[column] = clean_column
+        df[column] = pd.Series(clean)
     return df
 
 
@@ -137,7 +138,11 @@ def search(dataframe, query):
             if operator in ('eq', 'ne', 'lt', 'le', 'gt', 'ge'):
                 dataframe = dataframe.loc[getattr(dataframe[col_name], operator)(filter_value)]
             elif operator == 'contains':
-                dataframe = dataframe.loc[dataframe[col_name].str.contains(filter_value)]
+                filter_value = {filter_value}
+                isfilter_value = filter_value.issubset
+                dataframe[col_name] = [[] if x is np.NaN else x for x in dataframe[col_name]]
+                values = dataframe[col_name].values.tolist()
+                dataframe = dataframe[[isfilter_value(val) for val in values]]
             elif operator == 'datestartswith':
                 # this is a simplification of the front-end filtering logic,
                 # only works with complete fields in standard format
