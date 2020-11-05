@@ -55,7 +55,7 @@ def display_table(df):
         ],
         tooltip_duration=None
     )
-    return html.Div(id='data_table', children=table, style={'height': 800, 'width': 1000})
+    return html.Div(id='data_table', children=table, style={'height': 800})
 
 
 @app.callback(
@@ -233,7 +233,7 @@ def display_home():
                 dbc.Col(dbc.Button('Backup', id='button3', color="info", className="mr-1", block=True),
                         width={"size": 1, "order": "last"}),
             ]),
-            html.Div(id='output-container-button', children=[]),
+            dbc.Row(dbc.Col(html.Div(id='output-container-button', children=[], style={"margin-top": "10px"}), width=12)),
             html.Hr()
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
@@ -241,30 +241,36 @@ def display_home():
 
 
 def display_rating_budget():
+    scatter_plot = px.scatter(metadata, x="budget", y="rating")
     return html.Div(
         children=[
             html.H3('Correlation between Rating and Budget'),
             html.Hr(),
+            dcc.Graph(figure=scatter_plot)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
 
 
 def display_rating_revenue():
+    scatter_plot = px.scatter(metadata, x="revenue", y="rating")
     return html.Div(
         children=[
             html.H3('Correlation between Rating and Revenue'),
             html.Hr(),
+            dcc.Graph(figure=scatter_plot)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
 
 
 def display_revenue_budget():
+    scatter_plot = px.scatter(metadata, x="budget", y="revenue")
     return html.Div(
         children=[
             html.H3('Correlation between Revenue and Budget'),
             html.Hr(),
+            dcc.Graph(figure=scatter_plot)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
@@ -281,10 +287,17 @@ def display_rating_release_time():
 
 
 def display_popularity_released_language():
+    languages_votes = metadata[["spoken_languages", "rating"]]
+    num_languages = []
+    for i in metadata["spoken_languages"] :
+        num_languages.append(len(i))
+    languages_votes["num_languages"] = num_languages
+    scatter_plot = px.scatter(data_frame = languages_votes, x = "num_languages", y = "rating")
     return html.Div(
         children=[
             html.H3('Correlation between Popularity and Released Language'),
             html.Hr(),
+            dcc.Graph(figure=scatter_plot)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
@@ -342,20 +355,48 @@ def display_average_budget():
 
 
 def display_popular_movies():
+    genres = []
+    for i in metadata["genres"]:
+        for j in i:
+            genres.append(j)
+
+    pop_genres = pd.DataFrame(columns=["Genres"])
+    pop_genres['Genres'] = genres
+    value_counts = pop_genres['Genres'].value_counts(dropna=True, sort=True)
+    pop_genres = pop_genres.value_counts().rename_axis('Genres').reset_index(name='Count')
+    fig = px.bar(pop_genres, x='Genres', y='Count', title='Most Frequent Genres',
+                 color_discrete_sequence=['darkorange'] * len(pop_genres)
+                 )
+    fig.update_layout(title_x=0.5)
     return html.Div(
         children=[
             html.H3('Most Popular Movies'),
             html.Hr(),
+            dcc.Graph(figure=fig)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
 
 
 def display_common_keywords():
+    keys = []
+    for i in metadata["keywords"] :
+        for j in i :
+            keys.append(j)
+
+    pop_key = pd.DataFrame(columns= ["Keys"])
+    pop_key['Keys'] = keys
+    value_counts = pop_key['Keys'].value_counts(dropna=True, sort=True)
+    # print(value_counts)
+    pop_key = pop_key.value_counts().rename_axis('Keywords').reset_index(name='Count').head(15)
+    # print(pop_key)
+    fig = px.bar(pop_key, x='Keywords', y='Count', title='Most Common Keywords (TOP 15)',
+                 color_discrete_sequence=['darkorange'] * len(pop_key))
     return html.Div(
         children=[
             html.H3('Most Common Keywords'),
             html.Hr(),
+            dcc.Graph(figure=fig)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
