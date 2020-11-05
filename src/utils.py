@@ -1,8 +1,12 @@
 import pandas as pd
 import numpy as np
 import re
+import plotly.express as px
 # this line can be commented out --> tells run time of for loops
 from tqdm import tqdm
+pd.options.mode.chained_assignment = None  # default='warn'
+import collections
+from itertools import chain
 
 
 # csv parser function
@@ -149,6 +153,85 @@ def search(dataframe, query):
                 # only works with complete fields in standard format
                 dataframe = dataframe.loc[dataframe[col_name].str.startswith(filter_value)]
     return dataframe
+
+def genre_analytics(metadata) :
+    """
+    :param dataframe: dataframe object to perform search/analytics on
+    :return: display graph
+    """
+    # Extract genres from the dataframe to build analytics
+    # dataframe["genres"] = dataframe["genres"].astype('str')
+    genres = []
+    for i in metadata["genres"] :
+        for j in i :
+            genres.append(j)
+
+    pop_genres = pd.DataFrame(columns= ["Genres"])
+    pop_genres['Genres'] = genres
+    value_counts = pop_genres['Genres'].value_counts(dropna=True, sort=True)
+    # print(value_counts)
+    pop_genres = pop_genres.value_counts().rename_axis('Genres').reset_index(name='Count')
+    print(pop_genres)
+    fig = px.bar(pop_genres, x='Genres', y='Count')
+    fig.show()
+
+def budget_revenue(metadata) :
+    """
+    :param dataframe: dataframe object to perform search/analytics on
+    :return: display graph
+    """
+    scatterPlot = px.scatter(dataframe, x = "budget", y = "revenue")
+    scatterPlot.show()
+
+# def popular_actors(metadata) :
+#     keys = []
+#     for i in metadata["keywords"] :
+#         for j in i :
+#             keys.append(j)
+
+#     pop_key = pd.DataFrame(columns= ["Keys"])
+#     pop_key['Keys'] = keys
+#     value_counts = pop_key['Keys'].value_counts(dropna=True, sort=True)
+#     # print(value_counts)
+#     pop_key = pop_key.value_counts().rename_axis('Keywords').reset_index(name='Count')
+#     print(pop_key)
+#     fig = px.bar(pop_key, x='Keywords', y='Count')
+#     fig.show()
+
+def popular_keywords(metadata) :
+
+    keys = []
+    for i in metadata["keywords"] :
+        for j in i :
+            keys.append(j)
+
+    pop_key = pd.DataFrame(columns= ["Keys"])
+    pop_key['Keys'] = keys
+    value_counts = pop_key['Keys'].value_counts(dropna=True, sort=True)
+    # print(value_counts)
+    pop_key = pop_key.value_counts().rename_axis('Keywords').reset_index(name='Count')
+    print(pop_key)
+    fig = px.bar(pop_key, x='Keywords', y='Count')
+    fig.show()
+
+
+# def popular_release(dataframe) :
+
+def votes_languages(metadata) :
+    languages_votes = metadata[["spoken_languages", "rating"]]
+    num_languages = []
+    for i in metadata["spoken_languages"] :
+        num_languages.append(len(i))
+    languages_votes["num_languages"] = num_languages   
+    print(languages_votes)
+    scatterPlot = px.scatter(data_frame = languages_votes, x = "num_languages", y = "rating")
+    scatterPlot.show()
+
+
+metadata = load_data()
+votes_languages(metadata)
+popular_keywords(metadata)
+genre_analytics(metadata)
 
 
 # def update(dataframe, index, column, value):
