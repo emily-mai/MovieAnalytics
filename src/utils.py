@@ -171,7 +171,7 @@ def genre_analytics(metadata) :
     value_counts = pop_genres['Genres'].value_counts(dropna=True, sort=True)
     # print(value_counts)
     pop_genres = pop_genres.value_counts().rename_axis('Genres').reset_index(name='Count')
-    print(pop_genres)
+    # print(pop_genres)
     fig = px.bar(pop_genres, x='Genres', y='Count')
     fig.show()
 
@@ -180,7 +180,23 @@ def budget_revenue(metadata) :
     :param dataframe: dataframe object to perform search/analytics on
     :return: display graph
     """
-    scatterPlot = px.scatter(dataframe, x = "budget", y = "revenue")
+    scatterPlot = px.scatter(metadata, x = "budget", y = "revenue")
+    scatterPlot.show()
+
+def budget_rating(metadata) :
+    """
+    :param dataframe: dataframe object to perform search/analytics on
+    :return: display graph
+    """
+    scatterPlot = px.scatter(metadata, x = "budget", y = "rating")
+    scatterPlot.show()
+
+def revenue_rating(metadata) :
+    """
+    :param dataframe: dataframe object to perform search/analytics on
+    :return: display graph
+    """
+    scatterPlot = px.scatter(metadata, x = "revenue", y = "rating")
     scatterPlot.show()
 
 # def popular_actors(metadata) :
@@ -210,7 +226,7 @@ def popular_keywords(metadata) :
     value_counts = pop_key['Keys'].value_counts(dropna=True, sort=True)
     # print(value_counts)
     pop_key = pop_key.value_counts().rename_axis('Keywords').reset_index(name='Count')
-    print(pop_key)
+    # print(pop_key)
     fig = px.bar(pop_key, x='Keywords', y='Count')
     fig.show()
 
@@ -223,7 +239,7 @@ def votes_languages(metadata) :
     for i in metadata["spoken_languages"] :
         num_languages.append(len(i))
     languages_votes["num_languages"] = num_languages   
-    print(languages_votes)
+    # print(languages_votes)
     scatterPlot = px.scatter(data_frame = languages_votes, x = "num_languages", y = "rating")
     scatterPlot.show()
 
@@ -232,15 +248,6 @@ metadata = load_data()
 votes_languages(metadata)
 popular_keywords(metadata)
 genre_analytics(metadata)
+revenue_rating(metadata)
+budget_rating(metadata)
 
-
-# def update(dataframe, index, column, value):
-#     """
-#     :param dataframe: dataframe object to perform update on
-#     :param index: data index that user wants to edit
-#     :param column: data column that the user wants to edit
-#     :param value: user input for editing
-#     """
-#     # dataframe parameter to get access to movie listings
-#     dataframe.at[index, column] = value
-#     return dataframe
