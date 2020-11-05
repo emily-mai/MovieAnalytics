@@ -33,7 +33,7 @@ def parse_csv(filepath, contains_header=False):
                 else:
                     row.append(word)
             data.append(row)
-            break
+            # break
     # case for when file contains header when creating dataframe
     if contains_header:
         dataframe = pd.DataFrame(data, columns=headers)
@@ -94,6 +94,7 @@ def load_data():
     meta = meta.drop(['adult', 'belongs_to_collection', 'imdb_id', 'title', 'video', 'id'], axis=1)
     meta = clean_dataframe(meta,
                            ['genres', 'keywords', 'production_companies', 'production_countries', 'spoken_languages'])
+    meta = meta.rename(columns={"vote_average": "rating"})
     return meta
 
 

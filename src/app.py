@@ -1,4 +1,5 @@
 import src.utils as utils
+import src.analysis as analysis
 import dash
 import dash_core_components as dcc
 import dash_table
@@ -137,7 +138,7 @@ navbar = dbc.NavbarSimple(
                 dbc.DropdownMenuItem("Correlations", header=True),
                 dbc.DropdownMenuItem("Rating & Budget", href="/rating-budget"),
                 dbc.DropdownMenuItem("Rating & Revenue", href="/rating-revenue"),
-                dbc.DropdownMenuItem("Rating & Genre", href="/rating-genre"),
+                dbc.DropdownMenuItem("Revenue & Budget", href="/revenue-budget"),
                 dbc.DropdownMenuItem("Rating & Release Time", href="/rating-release"),
                 dbc.DropdownMenuItem("Popularity & Released Language", href="/popularity-language"),
                 dbc.DropdownMenuItem(divider=True),
@@ -259,10 +260,10 @@ def display_rating_revenue():
     )
 
 
-def display_rating_genre():
+def display_revenue_budget():
     return html.Div(
         children=[
-            html.H3('Correlation between Rating and Genre'),
+            html.H3('Correlation between Revenue and Budget'),
             html.Hr(),
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
@@ -290,29 +291,51 @@ def display_popularity_released_language():
 
 
 def display_average_revenue():
+    df = analysis.calculate_avg_per_genre(metadata, 'revenue')
+    fig = px.bar(
+        data_frame=df, x=df['genre'], y=df['average revenue'],
+        title='Average Revenue by Genre', color_discrete_sequence=['darkorange']*len(df)
+    )
+    fig.update_layout(title_x=0.5)
     return html.Div(
         children=[
             html.H3('Average Revenue'),
             html.Hr(),
+            dcc.Graph(figure=fig)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
 
+
 def display_average_rating():
+    df = analysis.calculate_avg_per_genre(metadata, 'rating')
+    fig = px.bar(
+        data_frame=df, x=df['genre'], y=df['average rating'], range_y=[4.5, 6.5],
+        title='Average Rating by Genre', color_discrete_sequence=['darkorange'] * len(df)
+    )
+    fig.update_layout(title_x=0.5)
     return html.Div(
         children=[
             html.H3('Average Rating'),
             html.Hr(),
+            dcc.Graph(figure=fig)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
 
 
 def display_average_budget():
+    df = analysis.calculate_avg_per_genre(metadata, 'budget')
+    fig = px.bar(
+        data_frame=df, x=df['genre'], y=df['average budget'],
+        title='Average Budget by Genre', color_discrete_sequence=['darkorange'] * len(df)
+    )
+    fig.update_layout(title_x=0.5)
     return html.Div(
         children=[
             html.H3('Average Budget'),
             html.Hr(),
+            dcc.Graph(figure=fig)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
@@ -356,8 +379,8 @@ def display_page(pathname):
         page = display_rating_budget()
     elif pathname == "/rating-revenue":
         page = display_rating_revenue()
-    elif pathname == "/rating-genre":
-        page = display_rating_genre()
+    elif pathname == "/revenue-budget":
+        page = display_revenue_budget()
     elif pathname == "/rating-release":
         page = display_rating_release_time()
     elif pathname == "/popularity-language":
