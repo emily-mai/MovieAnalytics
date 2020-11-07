@@ -1,5 +1,5 @@
-import src.utils as utils
-import src.analysis as analysis
+import utils as utils
+import analysis as analysis
 import dash
 import dash_core_components as dcc
 import dash_table
@@ -61,7 +61,8 @@ def display_table(df):
 @app.callback(
     Output('output-container-button', "children"),
     [Input('button1', "n_clicks")],
-    [State('search-bar', "value")])
+    [State('search-bar', "value")],
+)
 def update_table(n_clicks, value):
     if n_clicks is not None:
         print(value)
@@ -78,6 +79,54 @@ def toggle_navbar_collapse(n, is_open):
     if n:
         return not is_open
     return is_open
+
+
+@app.callback(
+    Output("insert-modal-div", "children"),
+    [Input("button2", "n_clicks")]
+)
+def insert(n_clicks):
+    #if the button has been clicked on
+    if n_clicks is not None:
+        inputs = []
+
+        for column in metadata.columns:
+            input_id = "insert-row-input" + column
+            input_group = dbc.InputGroup(
+                [
+                    dbc.InputGroupAddon(column, addon_type="prepend"),
+                    dbc.Input(id=input_id, placeholder="Enter data"),
+                ],
+                className="mr-1",
+            )
+            inputs.append(input_group)
+
+        modal = dbc.Modal(
+            [
+                dbc.ModalHeader("Insert"),
+                dbc.ModalBody(id='insert-body', children=inputs),
+                dbc.ModalFooter(dbc.Button("Submit", id="insert-submit", className="ml-auto")),
+            ],
+            id="insert-modal",
+            is_open=True
+        )
+        return modal
+
+
+@app.callback(
+    Output("insert-submit-button", "children"),
+    [Input("insert-submit", "n_clicks")],
+    [State("insert-body", "children")]
+)
+def submit_insert(n_clicks, inputs):
+    if n_clicks is not None:
+        row = []
+        for input_group in inputs:
+            input_dict = input_group.get('props').get('children')[1].get('props')
+            input_value = input_dict.get('value')
+            row.append(input_value)
+        metadata.append(row)
+        return metadata.to_dict('records')
 
 
 @app.callback(
@@ -224,6 +273,7 @@ def display_home():
             '''),
             html.Hr(),
             html.Div(id="edit-modal-div", children=[]),
+            html.Div(id="insert-modal-div", children=[]),
             dbc.Row(children=[
                 dbc.Col(dbc.Input(id="search-bar", placeholder="Column name, operator, value", type="text"), width=9),
                 dbc.Col(dbc.Button('Search', id='button1', color="info", className="mr-1", block=True),
@@ -234,6 +284,7 @@ def display_home():
                         width={"size": 1, "order": "last"}),
             ]),
             dbc.Row(dbc.Col(html.Div(id='output-container-button', children=[], style={"margin-top": "10px"}), width=12)),
+            dbc.Row(dbc.Col(html.Div(id='insert-submit-button', children=[], style={"margin-top": "10px"}), width=12)),
             html.Hr()
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
