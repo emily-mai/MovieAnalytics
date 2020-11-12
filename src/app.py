@@ -10,7 +10,10 @@ import pandas as pd
 from dash.dependencies import Input, Output, State
 import base64
 import datetime
+import _datetime
 import io
+import csv
+import ctypes
 
 app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
 app.title = 'Movie Analytics'
@@ -502,6 +505,76 @@ def display_popular_release_time():
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
+
+
+#######UNDER CONSTRUCTION###############################
+
+
+def my_table(df):
+    table = dash_table.DataTable(
+        id='test',
+        columns=[{"name": i, "id": i} for i in df.columns],
+        data=df.to_dict('records'),
+        css=[{'selector': '.row', 'rule': 'margin: 0'}],
+        fixed_rows={'headers': True},
+        # page_action='custom',
+        page_size=50,
+        page_current=0,
+        # sort_action="native",
+        row_deletable=True,
+        style_data_conditional=[
+            {
+                'if': {'row_index': 'odd'},
+                'backgroundColor': 'rgb(236,240,241)'
+            }
+        ],
+        style_header={'backgroundColor': 'rgb(158,180,202)',
+                      'fontWeight': 'bold'},
+        style_table={'overflowX': 'auto'},
+        style_cell={
+            'backgroundColor': 'rgb(191,200,201)',
+            'color': 'black',
+            'overflow': 'hidden',
+            'textOverflow': 'ellipsis',
+            # 'maxWidth': 0,
+            'minWidth': '180px', 'width': '180px', 'maxWidth': '180px',
+        },
+        tooltip_data=[
+            {
+                column: {'value': str(value), 'type': 'markdown'}
+                for column, value in row.items()
+            } for row in df.to_dict('rows')
+        ],
+        tooltip_duration=None
+    )
+    return html.Div(id='my_table', backitup=table, style={'height': 800, 'width': 1000})
+
+
+@app.callback(
+    Output('output-container-button', "backitup"),
+    [Input('button3', "n_clicks")],
+    [State('search-bar', "value")])
+def backup_data(n_clicks, value):
+    if n_clicks is not None:
+        df = pd.DataFrame(metadata)
+        movies_list = df.values.tolist()
+
+        # Once it has been converted, I then open a new file 'moviedata-year-month-day-hour.csv' and
+        # create a csvwriter called moviewriter.
+        # Then I use moviewriter to write the list to 'newFile.csv'.
+
+        filename = datetime.datetime.now().strftime('moviedata-%Y-%m-%d-%H.csv')
+        with open(filename, 'w', encoding='utf-8', newline='') as csvfile:
+            moviewriter = csv.writer(csvfile, delimiter=',',
+                                     quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            moviewriter.writerows(movies_list)
+
+        print(f"moviedata-{datetime.datetime.now():%Y-%m-%d-%H}.csv has been created.")
+
+        ctypes.windll.user32.MessageBoxW(0, f"moviedata-{datetime.datetime.now():%Y-%m-%d-%H}.csv has been created.", "Backup",0)
+
+
+#######UNDER CONSTRUCTION###############################
 
 
 @app.callback(Output('page-content', 'children'),
