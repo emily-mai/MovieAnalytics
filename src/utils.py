@@ -3,7 +3,7 @@ import numpy as np
 import re
 import plotly.express as px
 # this line can be commented out --> tells run time of for loops
-from tqdm import tqdm
+# from tqdm import tqdm
 pd.options.mode.chained_assignment = None  # default='warn'
 import collections
 from itertools import chain
@@ -27,7 +27,7 @@ def parse_csv(filepath, contains_header=False):
             headers = file.readline().strip('\n').split(',')
         # use for loop to read in rest of file
         # split data into corresponding columns using regex expression
-        for line in tqdm(file):
+        for line in file:
             line = line.strip('\n')
             words = re.split(r',(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))', line)
             row = []
