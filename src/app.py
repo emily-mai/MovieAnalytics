@@ -105,7 +105,8 @@ def insert(n_clicks):
             [
                 dbc.ModalHeader("Insert"),
                 dbc.ModalBody(id='insert-body', children=inputs),
-                dbc.ModalFooter(dbc.Button("Submit", id="insert-submit", className="ml-auto")),
+                dbc.ModalFooter(dbc.Button("Done"), id="insert-done", className="ml-auto"),
+                dbc.ModalFooter(dbc.Button("Submit", id="insert-submit", className="ml-auto"))
             ],
             id="insert-modal",
             is_open=True
@@ -113,8 +114,58 @@ def insert(n_clicks):
         return modal
 
 
+html.P(id='placeholder')
+
+
 @app.callback(
-    Output("insert-submit-button", "children"),
+    Output("placeholder", "value"),
+    [Input("insert-done", "n_clicks")],
+    [State("insert-body", "children")]
+)
+def insert_done(n_clicks):
+    if n_clicks is not None:
+        table2 = dash_table.DataTable(
+            id='table2',
+            columns=[{"name": i, "id": i} for i in metadata.columns],
+            data=metadata.to_dict('records'),
+            css=[{'selector': '.row', 'rule': 'margin: 0'}],
+            fixed_rows={'headers': True},
+            # page_action='custom',
+            page_size=50,
+            page_current=0,
+            # sort_action="native",
+            row_deletable=True,
+            style_data_conditional=[
+                {
+                    'if': {'row_index': 'odd'},
+                    'backgroundColor': 'rgb(236,240,241)'
+                }
+            ],
+            style_header={'backgroundColor': 'rgb(158,180,202)',
+                          'fontWeight': 'bold'},
+            style_table={'overflowX': 'auto'},
+            style_cell={
+                'backgroundColor': 'rgb(191,200,201)',
+                'color': 'black',
+                'overflow': 'hidden',
+                'textOverflow': 'ellipsis',
+                # 'maxWidth': 0,
+                'minWidth': '180px', 'width': '180px', 'maxWidth': '180px',
+            },
+            tooltip_data=[
+                {
+                    column: {'value': str(value), 'type': 'markdown'}
+                    for column, value in row.items()
+                } for row in metadata.to_dict('rows')
+            ],
+            tooltip_duration=None
+        )
+        return html.Div(id='data_table2', children=table2, style={'height': 800})
+
+
+
+@app.callback(
+    Output("table2", "data"),
     [Input("insert-submit", "n_clicks")],
     [State("insert-body", "children")]
 )
