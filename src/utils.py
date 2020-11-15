@@ -6,6 +6,7 @@ import plotly.express as px
 # from tqdm import tqdm
 pd.options.mode.chained_assignment = None  # default='warn'
 import collections
+import datetime
 from itertools import chain
 
 
@@ -101,6 +102,11 @@ def load_data():
     meta = meta.rename(columns={"vote_average": "rating"})
     return meta
 
+
+# def newest_data():
+#     meta = parse_csv(f"moviedata-{datetime.datetime.now():%Y-%m-%d-%H}.csv", True).drop_duplicates('id')
+#     meta.set_index('id', inplace=True)
+#     return meta
 
 def clean_dataframe(df, columns):
     """
