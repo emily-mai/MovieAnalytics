@@ -59,10 +59,10 @@ def display_table(df):
 
 
 @app.callback(
-    Output('output-container-button', "children"),
+    Output('search-output', "children"),
     [Input('button1', "n_clicks")],
     [State('search-bar', "value")])
-def update_table(n_clicks, value):
+def search(n_clicks, value):
     if n_clicks is not None:
         print(value)
         result = utils.search(metadata, query=value)
@@ -113,7 +113,7 @@ def edit_row(active_cell):
 
 
 @app.callback(
-    Output("table", "data"),
+    Output("edit-output", "children"),
     [Input("edit-submit", "n_clicks")],
     [State("edit-body", "children")]
 )
@@ -127,7 +127,60 @@ def submit_edit(n_clicks, inputs):
             row_index = input_group.get('props').get('key')
             row.append(input_value)
         metadata.loc[row_index] = row
-        return metadata.to_dict('records')
+        return display_table(metadata)
+
+
+@app.callback(
+    Output("insert-modal-div", "children"),
+    [Input("button2", "n_clicks")]
+)
+def insert(n_clicks):
+    #if the button has been clicked on
+    if n_clicks is not None:
+        inputs = []
+
+        for column in metadata.columns:
+            input_id = "insert-row-input" + column
+            input_group = dbc.InputGroup(
+                [
+                    dbc.InputGroupAddon(column, addon_type="prepend"),
+                    dbc.Input(id=input_id, placeholder="Enter data"),
+                ],
+                className="mr-1",
+            )
+            inputs.append(input_group)
+
+        modal = dbc.Modal(
+            [
+                dbc.ModalHeader("Insert"),
+                dbc.ModalBody(id='insert-body', children=inputs),
+                dbc.ModalFooter(dbc.Button("Submit", id="insert-submit", className="ml-auto")),
+            ],
+            id="insert-modal",
+            is_open=True
+        )
+        return modal
+
+
+@app.callback(
+    Output("insert-output", "children"),
+    [Input("insert-submit", "n_clicks")],
+    [State("insert-body", "children")]
+)
+def submit_insert(n_clicks, inputs):
+    if n_clicks is not None:
+        row = []
+        print(len(metadata))
+        for input_group in inputs:
+            input_dict = input_group.get('props').get('children')[1].get('props')
+            input_value = input_dict.get('value')
+            row.append(input_value)
+        print(row)
+        print(metadata.tail())
+        metadata.loc[len(metadata)] = row
+        print(len(metadata))
+        print(metadata.tail())
+        return display_table(metadata)
 
 
 navbar = dbc.NavbarSimple(
@@ -164,56 +217,56 @@ navbar = dbc.NavbarSimple(
 )
 
 
-def parse_contents(contents, filename, date):
-    content_type, content_string = contents.split(',')
+# def parse_contents(contents, filename, date):
+#     content_type, content_string = contents.split(',')
+#
+#     decoded = base64.b64decode(content_string)
+#     df = pd.DataFrame()
+#     try:
+#         if 'csv' in filename:
+#             # Assume that the user uploaded a CSV file
+#             df = pd.read_csv(
+#                 io.StringIO(decoded.decode('utf-8')))
+#         elif 'xls' in filename:
+#             # Assume that the user uploaded an excel file
+#             df = pd.read_excel(io.BytesIO(decoded))
+#
+#     except Exception as e:
+#         print(e)
+#         return html.Div([
+#             'There was an error processing this file.'
+#         ])
+#
+#     return html.Div([
+#         html.H5(filename),
+#         html.H6(datetime.datetime.fromtimestamp(date)),
+#
+#         dash_table.DataTable(
+#             data=df.to_dict('records'),
+#             columns=[{'name': i, 'id': i} for i in df.columns]
+#         ),
+#
+#         html.Hr(),  # horizontal line
+#
+#         # For debugging, display the raw contents provided by the web browser
+#         html.Div('Raw Content'),
+#         html.Pre(contents[0:200] + '...', style={
+#             'whiteSpace': 'pre-wrap',
+#             'wordBreak': 'break-all'
+#         })
+#     ])
 
-    decoded = base64.b64decode(content_string)
-    df = pd.DataFrame()
-    try:
-        if 'csv' in filename:
-            # Assume that the user uploaded a CSV file
-            df = pd.read_csv(
-                io.StringIO(decoded.decode('utf-8')))
-        elif 'xls' in filename:
-            # Assume that the user uploaded an excel file
-            df = pd.read_excel(io.BytesIO(decoded))
 
-    except Exception as e:
-        print(e)
-        return html.Div([
-            'There was an error processing this file.'
-        ])
-
-    return html.Div([
-        html.H5(filename),
-        html.H6(datetime.datetime.fromtimestamp(date)),
-
-        dash_table.DataTable(
-            data=df.to_dict('records'),
-            columns=[{'name': i, 'id': i} for i in df.columns]
-        ),
-
-        html.Hr(),  # horizontal line
-
-        # For debugging, display the raw contents provided by the web browser
-        html.Div('Raw Content'),
-        html.Pre(contents[0:200] + '...', style={
-            'whiteSpace': 'pre-wrap',
-            'wordBreak': 'break-all'
-        })
-    ])
-
-
-@app.callback(Output('output-data-upload', 'children'),
-              [Input('upload-data', 'contents')],
-              [State('upload-data', 'filename'),
-               State('upload-data', 'last_modified')])
-def update_output(list_of_contents, list_of_names, list_of_dates):
-    if list_of_contents is not None:
-        children = [
-            parse_contents(c, n, d) for c, n, d in
-            zip(list_of_contents, list_of_names, list_of_dates)]
-        return children
+# @app.callback(Output('output-data-upload', 'children'),
+#               [Input('upload-data', 'contents')],
+#               [State('upload-data', 'filename'),
+#                State('upload-data', 'last_modified')])
+# def update_output(list_of_contents, list_of_names, list_of_dates):
+#     if list_of_contents is not None:
+#         children = [
+#             parse_contents(c, n, d) for c, n, d in
+#             zip(list_of_contents, list_of_names, list_of_dates)]
+#         return children
 
 
 def display_home():
@@ -224,6 +277,7 @@ def display_home():
             '''),
             html.Hr(),
             html.Div(id="edit-modal-div", children=[]),
+            html.Div(id="insert-modal-div", children=[]),
             dbc.Row(children=[
                 dbc.Col(dbc.Input(id="search-bar", placeholder="Column name, operator, value", type="text"), width=9),
                 dbc.Col(dbc.Button('Search', id='button1', color="info", className="mr-1", block=True),
@@ -233,7 +287,9 @@ def display_home():
                 dbc.Col(dbc.Button('Backup', id='button3', color="info", className="mr-1", block=True),
                         width={"size": 1, "order": "last"}),
             ]),
-            dbc.Row(dbc.Col(html.Div(id='output-container-button', children=[], style={"margin-top": "10px"}), width=12)),
+            dbc.Row(dbc.Col(html.Div(id='search-output', children=[], style={"margin-top": "10px"}), width=12)),
+            dbc.Row(dbc.Col(html.Div(id='edit-output', children=[], style={"margin-top": "10px"}), width=12)),
+            dbc.Row(dbc.Col(html.Div(id='insert-output', children=[], style={"margin-top": "10px"}), width=12)),
             html.Hr()
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}

@@ -64,7 +64,6 @@ def split_filter_part(filter_part):
     :param filter_part: string formatted as "column operator value"
     :return: filter_part formatted as list of strings, if contains operator else return empty list
     """
-    # TODO: fix bug for search (problem with operators)
     # only split if operator is in the search input
     for operator_type in operators:
         for operator in operator_type:
