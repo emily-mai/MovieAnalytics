@@ -14,8 +14,6 @@ import io
 import csv
 import ctypes
 from pathlib import Path
-
-
 app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
 app.title = 'Movie Analytics'
 app.config['suppress_callback_exceptions'] = True
@@ -63,11 +61,10 @@ def display_table(df):
 
 
 @app.callback(
-    Output('output-container-button', "children"),
+    Output('search-output', "children"),
     [Input('button1', "n_clicks")],
-    [State('search-bar', "value")],
-)
-def update_table(n_clicks, value):
+    [State('search-bar', "value")])
+def search(n_clicks, value):
     if n_clicks is not None:
         print(value)
         result = utils.search(metadata, query=value)
@@ -83,95 +80,6 @@ def toggle_navbar_collapse(n, is_open):
     if n:
         return not is_open
     return is_open
-
-
-@app.callback(
-    Output("insert-modal-div", "children"),
-    [Input("button2", "n_clicks")]
-)
-def insert(n_clicks):
-    #if the button has been clicked on
-    if n_clicks is not None:
-        inputs = []
-
-        for column in metadata.columns:
-            input_id = "insert-row-input" + column
-            input_group = dbc.InputGroup(
-                [
-                    dbc.InputGroupAddon(column, addon_type="prepend"),
-                    dbc.Input(id=input_id, placeholder="Enter data"),
-                ],
-                className="mb-3",
-            )
-            inputs.append(input_group)
-
-        modal = dbc.Modal(
-            [
-                dbc.ModalHeader("Insert"),
-                dbc.ModalBody(id='insert-body', children=inputs),
-                # dbc.ModalFooter(dbc.Button("Done"), id="insert-done", className="ml-auto")
-                dbc.ModalFooter(dbc.Button("Submit", id="insert-submit", className="ml-auto"))
-            ],
-            id="insert-modal",
-            is_open=True
-        )
-        return modal
-
-
-def insert_done():
-    table2 = dash_table.DataTable(
-        id='table2',
-        columns=[{"name": i, "id": i} for i in metadata.columns],
-        data=metadata.to_dict('records'),
-        css=[{'selector': '.row', 'rule': 'margin: 0'}],
-        fixed_rows={'headers': True},
-        # page_action='custom',
-        page_size=50,
-        page_current=0,
-        # sort_action="native",
-        row_deletable=True,
-        style_data_conditional=[
-            {
-                'if': {'row_index': 'odd'},
-                'backgroundColor': 'rgb(236,240,241)'
-            }
-        ],
-        style_header={'backgroundColor': 'rgb(158,180,202)',
-                      'fontWeight': 'bold'},
-        style_table={'overflowX': 'auto'},
-        style_cell={
-            'backgroundColor': 'rgb(191,200,201)',
-            'color': 'black',
-            'overflow': 'hidden',
-            'textOverflow': 'ellipsis',
-            # 'maxWidth': 0,
-            'minWidth': '180px', 'width': '180px', 'maxWidth': '180px',
-        },
-        tooltip_data=[
-            {
-                column: {'value': str(value), 'type': 'markdown'}
-                for column, value in row.items()
-            } for row in metadata.to_dict('rows')
-        ],
-        tooltip_duration=None
-    )
-    return html.Div(id='data_table2', children=table2, style={'height': 800})
-
-
-@app.callback(
-    Output("table2", "data"),
-    [Input("insert-submit", "n_clicks")],
-    [State("insert-body", "children")]
-)
-def submit_insert(n_clicks, inputs):
-    if n_clicks is not None:
-        row = []
-        for input_group in inputs:
-            input_dict = input_group.get('props').get('children')[1].get('props')
-            input_value = input_dict.get('value')
-            row.append(input_value)
-        metadata.append(row)
-        return metadata.to_dict('records')
 
 
 @app.callback(
@@ -207,7 +115,7 @@ def edit_row(active_cell):
 
 
 @app.callback(
-    Output("table", "data"),
+    Output("edit-output", "children"),
     [Input("edit-submit", "n_clicks")],
     [State("edit-body", "children")]
 )
@@ -221,7 +129,60 @@ def submit_edit(n_clicks, inputs):
             row_index = input_group.get('props').get('key')
             row.append(input_value)
         metadata.loc[row_index] = row
-        return metadata.to_dict('records')
+        return display_table(metadata)
+
+
+@app.callback(
+    Output("insert-modal-div", "children"),
+    [Input("button2", "n_clicks")]
+)
+def insert(n_clicks):
+    # if the button has been clicked on
+    if n_clicks is not None:
+        inputs = []
+
+        for column in metadata.columns:
+            input_id = "insert-row-input" + column
+            input_group = dbc.InputGroup(
+                [
+                    dbc.InputGroupAddon(column, addon_type="prepend"),
+                    dbc.Input(id=input_id, placeholder="Enter data"),
+                ],
+                className="mr-1",
+            )
+            inputs.append(input_group)
+
+        modal = dbc.Modal(
+            [
+                dbc.ModalHeader("Insert"),
+                dbc.ModalBody(id='insert-body', children=inputs),
+                dbc.ModalFooter(dbc.Button("Submit", id="insert-submit", className="ml-auto")),
+            ],
+            id="insert-modal",
+            is_open=True
+        )
+        return modal
+
+
+@app.callback(
+    Output("insert-output", "children"),
+    [Input("insert-submit", "n_clicks")],
+    [State("insert-body", "children")]
+)
+def submit_insert(n_clicks, inputs):
+    if n_clicks is not None:
+        row = []
+        print(len(metadata))
+        for input_group in inputs:
+            input_dict = input_group.get('props').get('children')[1].get('props')
+            input_value = input_dict.get('value')
+            row.append(input_value)
+        print(row)
+        print(metadata.tail())
+        metadata.loc[len(metadata)] = row
+        print(len(metadata))
+        print(metadata.tail())
+        return display_table(metadata)
 
 
 navbar = dbc.NavbarSimple(
@@ -258,58 +219,6 @@ navbar = dbc.NavbarSimple(
 )
 
 
-def parse_contents(contents, filename, date):
-    content_type, content_string = contents.split(',')
-
-    decoded = base64.b64decode(content_string)
-    df = pd.DataFrame()
-    try:
-        if 'csv' in filename:
-            # Assume that the user uploaded a CSV file
-            df = pd.read_csv(
-                io.StringIO(decoded.decode('utf-8')))
-        elif 'xls' in filename:
-            # Assume that the user uploaded an excel file
-            df = pd.read_excel(io.BytesIO(decoded))
-
-    except Exception as e:
-        print(e)
-        return html.Div([
-            'There was an error processing this file.'
-        ])
-
-    return html.Div([
-        html.H5(filename),
-        html.H6(datetime.datetime.fromtimestamp(date)),
-
-        dash_table.DataTable(
-            data=df.to_dict('records'),
-            columns=[{'name': i, 'id': i} for i in df.columns]
-        ),
-
-        html.Hr(),  # horizontal line
-
-        # For debugging, display the raw contents provided by the web browser
-        html.Div('Raw Content'),
-        html.Pre(contents[0:200] + '...', style={
-            'whiteSpace': 'pre-wrap',
-            'wordBreak': 'break-all'
-        })
-    ])
-
-
-@app.callback(Output('output-data-upload', 'children'),
-              [Input('upload-data', 'contents')],
-              [State('upload-data', 'filename'),
-               State('upload-data', 'last_modified')])
-def update_output(list_of_contents, list_of_names, list_of_dates):
-    if list_of_contents is not None:
-        children = [
-            parse_contents(c, n, d) for c, n, d in
-            zip(list_of_contents, list_of_names, list_of_dates)]
-        return children
-
-
 def display_home():
     return html.Div(
         children=[
@@ -327,12 +236,12 @@ def display_home():
                         width={"size": 1, "order": "2"}),
                 dbc.Col(dbc.Button('Backup', id='button3', color="info", className="mr-1", block=True),
                         width={"size": 1, "order": "last"}),
-                #Import
                 dbc.Col(dbc.Button('Import', id='button4', color="info", className="mr-1", block=True),
                         width={"size": 1, "order": "last"}),
             ]),
-            dbc.Row(dbc.Col(html.Div(id='output-container-button', children=[], style={"margin-top": "10px"}), width=12)),
-            dbc.Row(dbc.Col(html.Div(id='insert-submit-button', children=[], style={"margin-top": "10px"}), width=12)),
+            dbc.Row(dbc.Col(html.Div(id='search-output', children=[], style={"margin-top": "10px"}), width=12)),
+            dbc.Row(dbc.Col(html.Div(id='edit-output', children=[], style={"display": "none"}), width=12)),
+            dbc.Row(dbc.Col(html.Div(id='insert-output', children=[], style={"display": "none"}), width=12)),
             html.Hr()
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
@@ -501,20 +410,7 @@ def display_common_keywords():
     )
 
 
-def display_popular_release_time():
-    return html.Div(
-        children=[
-            html.H3('Most Popular Release Times'),
-            html.Hr(),
-        ],
-        style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
-    )
-
-#######UNDER CONSTRUCTION###############################
-
-############BACK UP#####################################
-
-
+#####
 def my_table(df):
     table = dash_table.DataTable(
         id='test',
@@ -580,67 +476,17 @@ def backup_data(n_clicks, value):
 
         ctypes.windll.user32.MessageBoxW(0, f"moviedata-{datetime.datetime.now():%Y-%m-%d-%H}.csv has been created.", "Backup", 0)
 
-
-# ############BACK UP#####################################
-#
-# ############IMPORT######################################
+#####
 
 
-
-def import_table(df):
-    table = dash_table.DataTable(
-        id='import_table',
-        columns=[{"name": i, "id": i} for i in df.columns],
-        data=df.to_dict('records'),
-        css=[{'selector': '.row', 'rule': 'margin: 0'}],
-        fixed_rows={'headers': True},
-        # page_action='custom',
-        page_size=50,
-        page_current=0,
-        # sort_action="native",
-        row_deletable=True,
-        style_data_conditional=[
-            {
-                'if': {'row_index': 'odd'},
-                'backgroundColor': 'rgb(236,240,241)'
-            }
+def display_popular_release_time():
+    return html.Div(
+        children=[
+            html.H3('Most Popular Release Times'),
+            html.Hr(),
         ],
-        style_header={'backgroundColor': 'rgb(158,180,202)',
-                      'fontWeight': 'bold'},
-        style_table={'overflowX': 'auto'},
-        style_cell={
-            'backgroundColor': 'rgb(191,200,201)',
-            'color': 'black',
-            'overflow': 'hidden',
-            'textOverflow': 'ellipsis',
-            # 'maxWidth': 0,
-            'minWidth': '180px', 'width': '180px', 'maxWidth': '180px',
-        },
-        tooltip_data=[
-            {
-                column: {'value': str(value), 'type': 'markdown'}
-                for column, value in row.items()
-            } for row in df.to_dict('rows')
-        ],
-        tooltip_duration=None
+        style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
-    return html.Div(id='import_table', nonkeywordimport=table, style={'height': 800})
-
-@app.callback(
-    Output('output-container-button', "nonkeywordimport"),
-    [Input('button4', "n_clicks")],
-    [State('search-bar', "value")])
-def import_data(n_clicks, value):
-    if n_clicks is not None:
-        megadata = utils.new_data(f"moviedata-{datetime.datetime.now():%Y-%m-%d-%H}.csv", True)
-        print("Hello!")
-        # with open(f'moviedata-{datetime.datetime.now():%Y-%m-%d-%H}.csv', newline='') as f:
-        #     reader = csv.reader(f)
-        #     for row in reader:
-        #         print(row)
-############IMPORT######################################
-
-#######UNDER CONSTRUCTION###############################
 
 
 @app.callback(Output('page-content', 'children'),
