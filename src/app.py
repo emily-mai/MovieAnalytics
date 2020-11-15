@@ -584,60 +584,60 @@ def backup_data(n_clicks, value):
 # ############BACK UP#####################################
 #
 # ############IMPORT######################################
-#
-#
-#
-# def import_table(df):
-#     table = dash_table.DataTable(
-#         id='import_table',
-#         columns=[{"name": i, "id": i} for i in df.columns],
-#         data=df.to_dict('records'),
-#         css=[{'selector': '.row', 'rule': 'margin: 0'}],
-#         fixed_rows={'headers': True},
-#         # page_action='custom',
-#         page_size=50,
-#         page_current=0,
-#         # sort_action="native",
-#         row_deletable=True,
-#         style_data_conditional=[
-#             {
-#                 'if': {'row_index': 'odd'},
-#                 'backgroundColor': 'rgb(236,240,241)'
-#             }
-#         ],
-#         style_header={'backgroundColor': 'rgb(158,180,202)',
-#                       'fontWeight': 'bold'},
-#         style_table={'overflowX': 'auto'},
-#         style_cell={
-#             'backgroundColor': 'rgb(191,200,201)',
-#             'color': 'black',
-#             'overflow': 'hidden',
-#             'textOverflow': 'ellipsis',
-#             # 'maxWidth': 0,
-#             'minWidth': '180px', 'width': '180px', 'maxWidth': '180px',
-#         },
-#         tooltip_data=[
-#             {
-#                 column: {'value': str(value), 'type': 'markdown'}
-#                 for column, value in row.items()
-#             } for row in df.to_dict('rows')
-#         ],
-#         tooltip_duration=None
-#     )
-#     return html.Div(id='import_table', nonkeywordimport=table, style={'height': 800})
-#
-# @app.callback(
-#     Output('output-container-button', "nonkeywordimport"),
-#     [Input('button4', "n_clicks")],
-#     [State('search-bar', "num")])
-# def import_data(n_clicks, num):
-#     if n_clicks is not None:
-#         # newmetadata = utils.newest_data()
-#         # print(newmetadata)
-#         with open(f'moviedata-{datetime.datetime.now():%Y-%m-%d-%H}.csv', newline='') as f:
-#             reader = csv.reader(f)
-#             for row in reader:
-#                 print(row)
+
+
+
+def import_table(df):
+    table = dash_table.DataTable(
+        id='import_table',
+        columns=[{"name": i, "id": i} for i in df.columns],
+        data=df.to_dict('records'),
+        css=[{'selector': '.row', 'rule': 'margin: 0'}],
+        fixed_rows={'headers': True},
+        # page_action='custom',
+        page_size=50,
+        page_current=0,
+        # sort_action="native",
+        row_deletable=True,
+        style_data_conditional=[
+            {
+                'if': {'row_index': 'odd'},
+                'backgroundColor': 'rgb(236,240,241)'
+            }
+        ],
+        style_header={'backgroundColor': 'rgb(158,180,202)',
+                      'fontWeight': 'bold'},
+        style_table={'overflowX': 'auto'},
+        style_cell={
+            'backgroundColor': 'rgb(191,200,201)',
+            'color': 'black',
+            'overflow': 'hidden',
+            'textOverflow': 'ellipsis',
+            # 'maxWidth': 0,
+            'minWidth': '180px', 'width': '180px', 'maxWidth': '180px',
+        },
+        tooltip_data=[
+            {
+                column: {'value': str(value), 'type': 'markdown'}
+                for column, value in row.items()
+            } for row in df.to_dict('rows')
+        ],
+        tooltip_duration=None
+    )
+    return html.Div(id='import_table', nonkeywordimport=table, style={'height': 800})
+
+@app.callback(
+    Output('output-container-button', "nonkeywordimport"),
+    [Input('button4', "n_clicks")],
+    [State('search-bar', "value")])
+def import_data(n_clicks, value):
+    if n_clicks is not None:
+        megadata = utils.new_data(f"moviedata-{datetime.datetime.now():%Y-%m-%d-%H}.csv", True)
+        print("Hello!")
+        # with open(f'moviedata-{datetime.datetime.now():%Y-%m-%d-%H}.csv', newline='') as f:
+        #     reader = csv.reader(f)
+        #     for row in reader:
+        #         print(row)
 ############IMPORT######################################
 
 #######UNDER CONSTRUCTION###############################

@@ -103,10 +103,36 @@ def load_data():
     return meta
 
 
-# def newest_data():
-#     meta = parse_csv(f"moviedata-{datetime.datetime.now():%Y-%m-%d-%H}.csv", True).drop_duplicates('id')
-#     meta.set_index('id', inplace=True)
-#     return meta
+def new_data(filepath, contains_header=False):
+    # open csv file with open() and call it file
+    with open(filepath, 'r', encoding="utf8") as file:
+        data = []
+        headers = []
+        # case for when file contains headers
+        if contains_header:
+            # reading first line with readline()
+            # splitting line (separated by commas) to get each column header
+            headers = file.readline().strip('\n').split(',')
+        # use for loop to read in rest of file
+        # split data into corresponding columns using regex expression
+        for line in file:
+            line = line.strip('\n')
+            words = re.split(r',(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))', line)
+            row = []
+            for word in words:
+                if word.isdigit():
+                    row.append(int(word))
+                else:
+                    row.append(word)
+            data.append(row)
+            # break
+    # case for when file contains header when creating dataframe
+    if contains_header:
+        dataframe = pd.DataFrame(data, columns=headers)
+    else:
+        dataframe = pd.DataFrame(data)
+    print(dataframe)
+    return dataframe
 
 def clean_dataframe(df, columns):
     """
