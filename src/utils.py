@@ -1,12 +1,8 @@
 import pandas as pd
 import numpy as np
 import re
-import plotly.express as px
 # this line can be commented out --> tells run time of for loops
-# from tqdm import tqdm
-pd.options.mode.chained_assignment = None  # default='warn'
-import collections
-from itertools import chain
+from tqdm import tqdm
 
 
 # csv parser function
