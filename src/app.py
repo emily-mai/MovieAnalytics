@@ -1,5 +1,5 @@
-import src.utils as utils
-import src.analysis as analysis
+import utils as utils
+import analysis as analysis
 import dash
 import dash_core_components as dcc
 import dash_table
@@ -364,15 +364,35 @@ def update_rating_revenue(revenue_interval):
 
 
 def display_revenue_budget():
-    scatter_plot = px.scatter(metadata, x="budget", y="revenue")
+    # scatter_plot = px.scatter(metadata, x="budget", y="revenue")
     return html.Div(
         children=[
             html.H3('Correlation between Revenue and Budget'),
             html.Hr(),
-            dcc.Graph(figure=scatter_plot)
+            dcc.Graph(id='revenue_budget_graph'),
+            html.H6('Budget Range:'),
+            html.Div([
+                dcc.RangeSlider(id='range_budget2',
+                                min=0,
+                                max=400000000,
+                                value=[0, 50000000],
+                                marks=budget_values,
+                                step=None
+                                )
+            ])
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
+
+
+@app.callback(
+    Output('revenue_budget_graph', 'figure'),
+    [Input('range_budget2', 'value')]
+)
+def update_revenue_budget(budget_interval):
+    new_df = metadata[(metadata['budget'] >= budget_interval[0]) & (metadata['budget'] <= budget_interval[1])]
+    scatter_plot = px.scatter(data_frame=new_df, x='budget', y='revenue', height=550)
+    return scatter_plot
 
 
 def display_rating_release_time():
