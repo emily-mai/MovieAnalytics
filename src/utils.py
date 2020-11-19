@@ -149,6 +149,7 @@ def search(dataframe, query):
                 dataframe = dataframe.loc[dataframe[col_name].str.startswith(filter_value)]
     return dataframe
 
+  
 def pop_genre_table(df):
     genres = []
     for i in df["genres"]:
@@ -199,7 +200,7 @@ def insert_keyword_count(df, keywords):
         for index, row in df.iterrows():
             if row['Keywords'] == i:
                 row['Count'] = row['Count'] + 1
-    print(df)
+    # print(df)
 
 def remove_genre_count(df, genres):
     for i in genres:
