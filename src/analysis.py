@@ -1,28 +1,51 @@
 import pandas as pd
+import ast
 
 
-def calculate_avg_per_genre(dataframe, col):
-    per_genre = {}  # {"horror": (sum, count), "comedy": (sum ,count), ...}
-    for genres, feature in zip(dataframe['genres'], dataframe[col]):
-        try:
-            feature = float(feature)
-        except (ValueError, TypeError):
-            feature = 0
-        for genre in genres:
-            if genre in per_genre:
-                feature_sum, count = per_genre.get(genre)
-                feature_sum += feature
-                count += 1
-                per_genre[genre] = (feature_sum, count)
-            else:
-                per_genre[genre] = (feature, 1)
+def calculate_avg_per_genre(dataframe, col, per_genre):
+    if per_genre is None:
+        per_genre = {}  # {"horror": (sum, count), "comedy": (sum ,count), ...}
+        for genres, feature in zip(dataframe['genres'], dataframe[col]):
+            try:
+                feature = float(feature)
+            except (ValueError, TypeError):
+                feature = 0
+            for genre in genres:
+                if genre in per_genre:
+                    feature_sum, count = per_genre.get(genre)
+                    per_genre[genre] = (feature_sum + feature, count + 1)
+                else:
+                    per_genre[genre] = (feature, 1)
     averages = {}
     for genre in per_genre:
         sum, count = per_genre.get(genre)
         averages[genre] = sum / count
     temp = 'average ' + col
     df = pd.DataFrame(list(averages.items()), columns=['genre', temp])
-    return df
+    return df, per_genre
+
+
+def update_avgs_per_genre(movie, revenue_per_genre, rating_per_genre, budget_per_genre):
+    genre_val = movie[14]
+    revenue_val = movie[8]
+    budget_val = movie[0]
+    rating_val = movie[12]
+    for genre in genre_val:
+        print(genre)
+        if genre in revenue_per_genre:
+            feature_sum, count = revenue_per_genre.get(genre_val)
+            revenue_per_genre[genre_val] = (feature_sum + revenue_val, count + 1)
+        if genre in rating_per_genre:
+            feature_sum, count = rating_per_genre.get(genre_val)
+            rating_per_genre[genre_val] = (feature_sum + rating_val, count + 1)
+        if genre in budget_per_genre:
+            feature_sum, count = budget_per_genre.get(genre_val)
+            budget_per_genre[genre_val] = (feature_sum + budget_val, count + 1)
+        else:  # new genre, not found in current data
+            revenue_per_genre[genre] = (revenue_val, 1)
+            rating_per_genre[genre] = (rating_val, 1)
+            budget_per_genre[genre] = (budget_val, 1)
+    return revenue_per_genre, rating_per_genre, budget_per_genre
 
 
 # def genre_analytics(metadata) :
@@ -46,32 +69,6 @@ def calculate_avg_per_genre(dataframe, col):
 #     # fig = px.bar(pop_genres, x='Genres', y='Count')
 #     # fig.show()
 
-
-# def budget_revenue(metadata) :
-#     """
-#     :param dataframe: dataframe object to perform search/analytics on
-#     :return: display graph
-#     """
-#     scatterPlot = px.scatter(metadata, x = "budget", y = "revenue")
-#     scatterPlot.show()
-#
-#
-# def budget_rating(metadata) :
-#     """
-#     :param dataframe: dataframe object to perform search/analytics on
-#     :return: display graph
-#     """
-#     scatterPlot = px.scatter(metadata, x = "budget", y = "rating")
-#     scatterPlot.show()
-#
-#
-# def revenue_rating(metadata) :
-#     """
-#     :param dataframe: dataframe object to perform search/analytics on
-#     :return: display graph
-#     """
-#     scatterPlot = px.scatter(metadata, x = "revenue", y = "rating")
-#     scatterPlot.show()
 
 # def popular_actors(metadata) :
 #     keys = []
