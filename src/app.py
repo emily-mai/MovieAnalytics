@@ -1,5 +1,5 @@
-import src.utils as utils
-import src.analysis as analysis
+import utils as utils
+import analysis as analysis
 import dash
 import dash_core_components as dcc
 import dash_table
@@ -287,10 +287,12 @@ def display_revenue_budget():
 
 
 def display_rating_release_time():
+    scatter_plot = px.scatter(metadata, x="release_date", y="rating")
     return html.Div(
         children=[
             html.H3('Correlation between Rating and Release Time'),
             html.Hr(),
+            dcc.Graph(figure=scatter_plot)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
