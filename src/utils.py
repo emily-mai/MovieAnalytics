@@ -172,8 +172,8 @@ def pop_genre_table(df):
 
 def pop_keywords_table(df):
     keys = []
-    for i in df["keywords"] :
-        for j in i :
+    for i in df["keywords"]:
+        for j in i:
             keys.append(j)
 
     pop_key = pd.DataFrame(columns= ["Keys"])

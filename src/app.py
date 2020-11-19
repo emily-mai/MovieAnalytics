@@ -1,5 +1,5 @@
-import utils as utils
-import analysis as analysis
+import src.utils as utils
+import src.analysis as analysis
 import dash
 import dash_core_components as dcc
 import dash_table
@@ -423,6 +423,7 @@ def display_rating_release_time():
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
 
+
 @app.callback(
     Output('rating-time-graph', 'figure'),
     [Input('rating-time-radio', 'value')]
@@ -499,6 +500,7 @@ def display_average_revenue():
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
 
+
 ###Ricardo Interactive Analytics###
 @app.callback(
     Output('avg revenue', 'fig'),
@@ -514,6 +516,7 @@ def revenue_high_to_low(n_clicks):
         fig.update_layout(xaxis={'categoryorder': 'total descending'})
         return fig.show()
 ###Ricardo Interactive Analytics ******END###
+
 
 def display_average_rating():
     df, _ = analysis.calculate_avg_per_genre(metadata, 'rating', rating_per_genre)
@@ -536,6 +539,7 @@ def display_average_rating():
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
+
 
 ###Ricardo Interactive Analytics###
 @app.callback(
@@ -575,6 +579,7 @@ def display_average_budget():
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
+
 
 ###Ricardo Interactive Analytics###
 @app.callback(
