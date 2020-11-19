@@ -18,7 +18,11 @@ _, revenue_per_genre = analysis.calculate_avg_per_genre(metadata, 'revenue', per
 _, rating_per_genre = analysis.calculate_avg_per_genre(metadata, 'rating', per_genre=None)
 _, budget_per_genre = analysis.calculate_avg_per_genre(metadata, 'budget', per_genre=None)
 pop_genres_count = utils.pop_genre_table(metadata)
+print(pop_genres_count)
+print(type(pop_genres_count))
 pop_keys_count = utils.pop_keywords_table(metadata)
+print(pop_keys_count)
+print(type(pop_keys_count))
 
 revenue_values = {0: '0', 200000000: '200M', 400000000: '400M', 600000000: '600M', 800000000: '800M', 1000000000: '1B', 1200000000: '1.2B', 1400000000: '1.4B',
                   1600000000: '1.6B', 1800000000: '1.8B', 2000000000: '2B'}
