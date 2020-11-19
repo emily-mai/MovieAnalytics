@@ -149,55 +149,59 @@ def search(dataframe, query):
                 dataframe = dataframe.loc[dataframe[col_name].str.startswith(filter_value)]
     return dataframe
 
-def pop_genre_table(df):
-    genres = []
-    for i in df["genres"]:
-        for j in i:
-            genres.append(j)
 
-    pop_genres = pd.DataFrame(columns=["Genres"])
-    pop_genres['Genres'] = genres
-    value_counts = pop_genres['Genres'].value_counts(dropna=True, sort=True)
-    pop_genres = pop_genres.value_counts().rename_axis('Genres').reset_index(name='Count')
+# def pop_genre_table(df):
+#     genres = []
+#     for i in df["genres"]:
+#         for j in i:
+#             genres.append(j)
+#
+#     pop_genres = pd.DataFrame(columns=["Genres"])
+#     pop_genres['Genres'] = genres
+#     value_counts = pop_genres['Genres'].value_counts(dropna=True, sort=True)
+#     pop_genres = pop_genres.value_counts().rename_axis('Genres').reset_index(name='Count')
+#     return pop_genres
+#
+#
+# def pop_keywords_table(df):
+#     keys = []
+#     for i in df["keywords"]:
+#         for j in i:
+#             keys.append(j)
+#
+#     pop_key = pd.DataFrame(columns=["Keys"])
+#     pop_key['Keys'] = keys
+#     value_counts = pop_key['Keys'].value_counts(dropna=True, sort=True)
+#     # print(value_counts)
+#     pop_key = pop_key.value_counts().rename_axis('Keywords').reset_index(name='Count')
+#     return pop_key
 
-    return pop_genres
 
-def pop_keywords_table(df):
-    keys = []
-    for i in df["keywords"] :
-        for j in i :
-            keys.append(j)
-
-    pop_key = pd.DataFrame(columns= ["Keys"])
-    pop_key['Keys'] = keys
-    value_counts = pop_key['Keys'].value_counts(dropna=True, sort=True)
-    # print(value_counts)
-    pop_key = pop_key.value_counts().rename_axis('Keywords').reset_index(name='Count')
-    
-    return pop_key
-
-def insert_genre_count(df, genres):
-    for row in df.rows:
-        for i in genres:
-            if df.at[row, 0] == i:
-                df.at[row, 1] = df.at[row, 1] + 1
-
-def insert_keyword_count(df, keywords):
-    for row in df.rows:
-        for i in keywords:
-            if df.at[row, 0] == i:
-                df.at[row, 1] = df.at[row, 1] + 1
-
-def remove_genre_count(df, genres):
-    for row in df.rows:
-        for i in genres:
-            if df.at[row, 0] == i:
-                df.at[row, 1] = df.at[row, 1] - 1
-
-def remove_keyword_count(df, keywords):
-    for row in df.rows:
-        for i in keywords:
-            if df.at[row, 0] == i:
-                df.at[row, 1] = df.at[row, 1] - 1
+# def insert_genre_count(df, genres):
+#     for i in genres:
+#         for row in df.rows():
+#             if df.at[row, 0] == i:
+#                 df.at[row, 1] = df.at[row, 1] + 1
+#
+#
+# def insert_keyword_count(df, keywords):
+#     for i in keywords:
+#         for row in df.rows():
+#             if df.at[row, 0] == i:
+#                 df.at[row, 1] = df.at[row, 1] + 1
+#
+#
+# def remove_genre_count(df, genres):
+#     for i in genres:
+#         for row in df.rows():
+#             if df.at[row, 0] == i:
+#                 df.at[row, 1] = df.at[row, 1] - 1
+#
+#
+# def remove_keyword_count(df, keywords):
+#     for i in keywords:
+#         for row in df.rows():
+#             if df.at[row, 0] == i:
+#                 df.at[row, 1] = df.at[row, 1] - 1
 
 
