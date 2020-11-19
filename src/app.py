@@ -5,17 +5,18 @@ import dash_core_components as dcc
 import dash_table
 import dash_html_components as html
 import dash_bootstrap_components as dbc
-import plotly.express as px
 import pandas as pd
+import ast
+import plotly.express as px
 from dash.dependencies import Input, Output, State
-import base64
-import datetime
-import io
 
 app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
 app.title = 'Movie Analytics'
 app.config['suppress_callback_exceptions'] = True
 metadata = utils.load_data()
+_, revenue_per_genre = analysis.calculate_avg_per_genre(metadata, 'revenue', per_genre=None)
+_, rating_per_genre = analysis.calculate_avg_per_genre(metadata, 'rating', per_genre=None)
+_, budget_per_genre = analysis.calculate_avg_per_genre(metadata, 'budget', per_genre=None)
 
 revenue_values = {0: '0', 200000000: '200M', 400000000: '400M', 600000000: '600M', 800000000: '800M', 1000000000: '1B', 1200000000: '1.2B', 1400000000: '1.4B',
                   1600000000: '1.6B', 1800000000: '1.8B', 2000000000: '2B'}
@@ -173,16 +174,21 @@ def insert(n_clicks):
 def submit_insert(n_clicks, inputs):
     if n_clicks is not None:
         row = []
-        print(len(metadata))
         for input_group in inputs:
             input_dict = input_group.get('props').get('children')[1].get('props')
             input_value = input_dict.get('value')
-            row.append(input_value)
-        print(row)
-        print(metadata.tail())
+            print(input_value)
+            if input_value.isdigit():
+                row.append(int(input_value))
+            elif "[" in input_value:
+                row.append(ast.literal_eval(input_value))
+            else:
+                row.append(input_value)
         metadata.loc[len(metadata)] = row
-        print(len(metadata))
-        print(metadata.tail())
+        global revenue_per_genre, rating_per_genre, budget_per_genre
+        revenue_per_genre, rating_per_genre, budget_per_genre = analysis.update_avgs_per_genre(
+            row, revenue_per_genre, rating_per_genre, budget_per_genre
+        )
         return display_table(metadata)
 
 
@@ -367,7 +373,7 @@ def display_popularity_released_language():
 
 
 def display_average_revenue():
-    df = analysis.calculate_avg_per_genre(metadata, 'revenue')
+    df, _ = analysis.calculate_avg_per_genre(metadata, 'revenue', revenue_per_genre)
     fig = px.bar(
         data_frame=df, x=df['genre'], y=df['average revenue'],
         title='Average Revenue by Genre', color_discrete_sequence=['darkorange']*len(df)
@@ -384,7 +390,7 @@ def display_average_revenue():
 
 
 def display_average_rating():
-    df = analysis.calculate_avg_per_genre(metadata, 'rating')
+    df, _ = analysis.calculate_avg_per_genre(metadata, 'rating', rating_per_genre)
     fig = px.bar(
         data_frame=df, x=df['genre'], y=df['average rating'], range_y=[4.5, 6.5],
         title='Average Rating by Genre', color_discrete_sequence=['darkorange'] * len(df)
@@ -401,7 +407,7 @@ def display_average_rating():
 
 
 def display_average_budget():
-    df = analysis.calculate_avg_per_genre(metadata, 'budget')
+    df, _ = analysis.calculate_avg_per_genre(metadata, 'budget', budget_per_genre)
     fig = px.bar(
         data_frame=df, x=df['genre'], y=df['average budget'],
         title='Average Budget by Genre', color_discrete_sequence=['darkorange'] * len(df)
