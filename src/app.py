@@ -1,5 +1,5 @@
-import src.utils as utils
-import src.analysis as analysis
+import utils as utils
+import analysis as analysis
 import dash
 import dash_core_components as dcc
 import dash_table
@@ -7,7 +7,10 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 import pandas as pd
 import ast
+import plotly
 import plotly.express as px
+import plotly.io as pio
+import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State
 
 app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
@@ -415,11 +418,32 @@ def display_average_revenue():
         children=[
             html.H3('Average Revenue'),
             html.Hr(),
-            dcc.Graph(figure=fig)
+            dcc.Graph(figure=fig, id='avg revenue'),
+            ###Ricardo Interactive Analytics START ******###
+            html.H6('Sort: High to Low'),
+            html.Div([
+                html.Button('View in New Tab', id='SortAvgRev'),
+            ])
+            ###Ricardo Interactive Analytics###
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
 
+###Ricardo Interactive Analytics###
+@app.callback(
+    Output('avg revenue', 'fig'),
+    [Input('SortAvgRev', 'n_clicks')]
+)
+def revenue_high_to_low(n_clicks):
+    if n_clicks is not None:
+        df, _ = analysis.calculate_avg_per_genre(metadata, 'revenue', revenue_per_genre)
+        fig = px.bar(
+            data_frame=df, x=df['genre'], y=df['average revenue'],
+            title='Average Revenue by Genre', color_discrete_sequence=['darkorange'] * len(df)
+        )
+        fig.update_layout(xaxis={'categoryorder': 'total descending'})
+        return fig.show()
+###Ricardo Interactive Analytics ******END###
 
 def display_average_rating():
     df, _ = analysis.calculate_avg_per_genre(metadata, 'rating', rating_per_genre)
@@ -432,10 +456,32 @@ def display_average_rating():
         children=[
             html.H3('Average Rating'),
             html.Hr(),
-            dcc.Graph(figure=fig)
+            dcc.Graph(figure=fig, id='avg rating'),
+            ###Ricardo Interactive Analytics START ******###
+            html.H6('Sort: High to Low'),
+            html.Div([
+                html.Button('View in New Tab', id='SortAvgRat'),
+            ])
+            ###Ricardo Interactive Analytics###
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
+
+###Ricardo Interactive Analytics###
+@app.callback(
+    Output('avg rating', 'fig'),
+    [Input('SortAvgRat', 'n_clicks')]
+)
+def rating_high_to_low(n_clicks):
+    if n_clicks is not None:
+        df, _ = analysis.calculate_avg_per_genre(metadata, 'rating', rating_per_genre)
+        fig = px.bar(
+            data_frame=df, x=df['genre'], y=df['average rating'], range_y=[4.5, 6.5],
+            title='Average Rating by Genre', color_discrete_sequence=['darkorange'] * len(df)
+        )
+        fig.update_layout(xaxis={'categoryorder': 'total descending'})
+        return fig.show()
+###Ricardo Interactive Analytics ******END###
 
 
 def display_average_budget():
@@ -449,10 +495,32 @@ def display_average_budget():
         children=[
             html.H3('Average Budget'),
             html.Hr(),
-            dcc.Graph(figure=fig)
+            dcc.Graph(figure=fig, id="avg budget"),
+            ###Ricardo Interactive Analytics START ******###
+            html.H6('Sort: High to Low'),
+            html.Div([
+                html.Button('View in New Tab', id='SortAvgBud'),
+            ])
+            ###Ricardo Interactive Analytics###
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
+
+###Ricardo Interactive Analytics###
+@app.callback(
+    Output('avg budget', 'fig'),
+    [Input('SortAvgBud', 'n_clicks')]
+)
+def rating_high_to_low(n_clicks):
+    if n_clicks is not None:
+        df, _ = analysis.calculate_avg_per_genre(metadata, 'budget', budget_per_genre)
+        fig = px.bar(
+            data_frame=df, x=df['genre'], y=df['average budget'],
+            title='Average Budget by Genre', color_discrete_sequence=['darkorange'] * len(df)
+        )
+        fig.update_layout(xaxis={'categoryorder': 'total descending'})
+        return fig.show()
+###Ricardo Interactive Analytics ******END###
 
 
 def display_popular_movies():
