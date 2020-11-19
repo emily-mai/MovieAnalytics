@@ -39,7 +39,7 @@ def parse_csv(filepath, contains_header=False):
         dataframe = pd.DataFrame(data, columns=headers)
     else:
         dataframe = pd.DataFrame(data)
-    print(dataframe)
+    # print(dataframe)
     return dataframe
 
 
@@ -133,7 +133,7 @@ def search(dataframe, query):
         filtering_expressions = query.split(' && ')
         for filter_part in filtering_expressions:
             col_name, operator, filter_value = split_filter_part(filter_part)
-            print(col_name, operator, filter_value)
+            # print(col_name, operator, filter_value)
             # these operators match pandas series operator method names
             if operator in ('eq', 'ne', 'lt', 'le', 'gt', 'ge'):
                 dataframe = dataframe.loc[getattr(dataframe[col_name], operator)(filter_value)]
@@ -148,4 +148,60 @@ def search(dataframe, query):
                 # only works with complete fields in standard format
                 dataframe = dataframe.loc[dataframe[col_name].str.startswith(filter_value)]
     return dataframe
+
+
+# def pop_genre_table(df):
+#     genres = []
+#     for i in df["genres"]:
+#         for j in i:
+#             genres.append(j)
+
+#     pop_genres = pd.DataFrame(columns=["Genres"])
+#     pop_genres['Genres'] = genres
+#     value_counts = pop_genres['Genres'].value_counts(dropna=True, sort=True)
+#     pop_genres = pop_genres.value_counts().rename_axis('Genres').reset_index(name='Count')
+#     return pop_genres
+#
+#
+# def pop_keywords_table(df):
+#     keys = []
+#     for i in df["keywords"]:
+#         for j in i:
+#             keys.append(j)
+#
+#     pop_key = pd.DataFrame(columns=["Keys"])
+#     pop_key['Keys'] = keys
+#     value_counts = pop_key['Keys'].value_counts(dropna=True, sort=True)
+#     # print(value_counts)
+#     pop_key = pop_key.value_counts().rename_axis('Keywords').reset_index(name='Count')
+#     return pop_key
+
+
+# def insert_genre_count(df, genres):
+#     for i in genres:
+#         for row in df.rows():
+#             if df.at[row, 0] == i:
+#                 df.at[row, 1] = df.at[row, 1] + 1
+#
+#
+# def insert_keyword_count(df, keywords):
+#     for i in keywords:
+#         for row in df.rows():
+#             if df.at[row, 0] == i:
+#                 df.at[row, 1] = df.at[row, 1] + 1
+#
+#
+# def remove_genre_count(df, genres):
+#     for i in genres:
+#         for row in df.rows():
+#             if df.at[row, 0] == i:
+#                 df.at[row, 1] = df.at[row, 1] - 1
+#
+#
+# def remove_keyword_count(df, keywords):
+#     for i in keywords:
+#         for row in df.rows():
+#             if df.at[row, 0] == i:
+#                 df.at[row, 1] = df.at[row, 1] - 1
+
 
