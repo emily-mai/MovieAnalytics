@@ -1,29 +1,26 @@
-import utils as utils
+# import src.utils as utils
+# Comment this out later
+import utils2 as utils2 
 import analysis as analysis
 import dash
 import dash_core_components as dcc
 import dash_table
 import dash_html_components as html
 import dash_bootstrap_components as dbc
-import pandas as pd
-import ast
 import plotly.express as px
+import pandas as pd
 from dash.dependencies import Input, Output, State
+import base64
+import datetime
+import io
 
 app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
 app.title = 'Movie Analytics'
 app.config['suppress_callback_exceptions'] = True
-metadata = utils.load_data()
-_, revenue_per_genre = analysis.calculate_avg_per_genre(metadata, 'revenue', per_genre=None)
-_, rating_per_genre = analysis.calculate_avg_per_genre(metadata, 'rating', per_genre=None)
-_, budget_per_genre = analysis.calculate_avg_per_genre(metadata, 'budget', per_genre=None)
-pop_genres_count = utils.pop_genre_table(metadata)
-pop_keys_count = utils.pop_keywords_table(metadata)
+metadata = utils2.load_data()
+pop_genres_count = utils2.pop_genre_table(metadata)
+pop_keys_count = utils2.pop_keywords_table(metadata)
 
-revenue_values = {0: '0', 200000000: '200M', 400000000: '400M', 600000000: '600M', 800000000: '800M', 1000000000: '1B', 1200000000: '1.2B', 1400000000: '1.4B',
-                  1600000000: '1.6B', 1800000000: '1.8B', 2000000000: '2B'}
-
-budget_values = {0: '0', 50000000: '50M', 100000000: '100M', 150000000: '150M', 200000000: '200M', 250000000: '250M', 300000000: '300M', 350000000: '350M', 400000000: '400M'}
 def display_table(df):
     table = dash_table.DataTable(
         id='table',
@@ -70,8 +67,8 @@ def display_table(df):
     [State('search-bar', "value")])
 def search(n_clicks, value):
     if n_clicks is not None:
-        print(value)
-        result = utils.search(metadata, query=value)
+        # print(value)
+        result = utils2.search(metadata, query=value)
         return display_table(result)
 
 
@@ -123,32 +120,35 @@ def edit_row(active_cell):
     [Input("edit-submit", "n_clicks")],
     [State("edit-body", "children")]
 )
-def submit_edit(n_clicks, inputs):
-    if n_clicks is not None:
-        row_index = None
-        row = []
-        for input_group in inputs:
-            input_dict = input_group.get('props').get('children')[1].get('props')
-            input_value = input_dict.get('value')
-            row_index = input_group.get('props').get('key')
-            row.append(input_value)
+def submit_edit(n_clicks, inputs):      # Pass in list of inputs from modal (for each header)
+    if n_clicks is not None:            # If the user presses the button
+        row_index = None                # Set row index to null
+        row = []                        # Initialize empty list called row 
+        for input_group in inputs:      # For each entry in an input area
+            input_dict = input_group.get('props').get('children')[1].get('props')       # Initialize input_dict that gets the names of the inputs 
+            input_value = input_dict.get('value')                                       # Initialize input_value to input name from dictionary (headers)
+            row_index = input_group.get('props').get('key')                             # Set row_index to the appropriate 'key' (id)
+            row.append(input_value)                                                     # Add each input value to list 'row' (we will use this to replace)
         
         before_edit_genre = metadata.loc[row_index, 'genre']                            # Set before value
         after_edit_genre = row[14]                                                       # Find the appropriate genre column in row
         added_genres = list(set(after_edit_genre) - set(before_edit_genre))             # Added genres is the after - before
-        utils.insert_genre_count(pop_genres_count, added_genres)                       # Update the inserted genres count
+        utils2.insert_genre_count(pop_genres_count, added_genres)                       # Update the inserted genres count
         removed_genres = list(set(before_edit_genre) - set(after_edit_genre))           # Removed genres is the before - after
-        utils.remove_genre_count(pop_genres_count, removed_genres)                     # Decrement the count for each removed genre
+        utils2.remove_genre_count(pop_genres_count, removed_genres)                     # Decrement the count for each removed genre
 
         before_edit_keywords = metadata.loc[row_index, 'keywords']                      # Set before value
         after_edit_keywords = row[15]                                                    # Set after value
         added_keywords = list(set(after_edit_keywords) - set(before_edit_keywords))     # Added genres is the after - before
-        utils.insert_keyword_count(pop_keys_count, added_keywords)                     # Update the inserted genres count
+        utils2.insert_keyword_count(pop_keys_count, added_keywords)                     # Update the inserted genres count
         removed_keywords = list(set(before_edit_keywords) - set(after_edit_keywords))   # Removed genres is the before - after
-        utils.remove_keyword_count(pop_keys_count, removed_keywords)                   # Decrement the count for each removed genre
+        utils2.remove_keyword_count(pop_keys_count, removed_keywords)                   # Decrement the count for each removed genre
 
-        metadata.loc[row_index] = row
+        metadata.loc[row_index] = row                                                   # Locate the approproate row index in metadata and change it to row
+
         return display_table(metadata)
+    
+            
 
 
 @app.callback(
@@ -191,28 +191,23 @@ def insert(n_clicks):
 def submit_insert(n_clicks, inputs):
     if n_clicks is not None:
         row = []
+        # print(len(metadata))
         for input_group in inputs:
             input_dict = input_group.get('props').get('children')[1].get('props')
             input_value = input_dict.get('value')
-            print(input_value)
-            if input_value.isdigit():
-                row.append(int(input_value))
-            elif "[" in input_value:
-                row.append(ast.literal_eval(input_value))
-            else:
-                row.append(input_value)
-        
+            row.append(input_value)
+
         added_genres = row[14]                                                          # Find the appropriate genre column in row
-        utils.insert_genre_count(pop_genres_count, added_genres)                       # Update the inserted genres count
+        utils2.insert_genre_count(pop_genres_count, added_genres)                       # Update the inserted genres count
 
         added_keywords = row[15]
-        utils.insert_keyword_count(pop_keys_count, added_keywords)
-
+        utils2.insert_keyword_count(pop_keys_count, added_keywords)
+        
+        # print(row)
+        # print(metadata.tail())
         metadata.loc[len(metadata)] = row
-        global revenue_per_genre, rating_per_genre, budget_per_genre
-        revenue_per_genre, rating_per_genre, budget_per_genre = analysis.update_avgs_per_genre(
-            row, revenue_per_genre, rating_per_genre, budget_per_genre
-        )
+        # print(len(metadata))
+        # print(metadata.tail())
         return display_table(metadata)
 
 
@@ -278,81 +273,27 @@ def display_home():
 
 
 def display_rating_budget():
-    # scatter_plot = px.scatter(metadata, x="budget", y="rating")
+    scatter_plot = px.scatter(metadata, x="budget", y="rating")
     return html.Div(
         children=[
             html.H3('Correlation between Rating and Budget'),
             html.Hr(),
-            dcc.Graph(id='rating_budget_graph'),
-            html.H6('Budget Range:'),
-            html.Div([
-                dcc.RangeSlider(id='range_budget',
-                                min=0,
-                                max=400000000,
-                                value=[0, 50000000],
-                                marks=budget_values,
-                                step=None
-                                )
-            ])
+            dcc.Graph(figure=scatter_plot)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
 
 
-@app.callback(
-    Output('rating_budget_graph', 'figure'),
-    [Input('range_budget', 'value')]
-)
-def update_rating_revenue(budget_interval):
-    new_df = metadata[(metadata['budget'] >= budget_interval[0]) & (metadata['budget'] <= budget_interval[1])]
-
-    scatter_plot = px.scatter(
-        data_frame=new_df,
-        x='budget',
-        y='rating',
-        height=550
-    )
-
-    return scatter_plot
-
-
 def display_rating_revenue():
-    # scatter_plot = px.scatter(metadata, x="revenue", y="rating")
+    scatter_plot = px.scatter(metadata, x="revenue", y="rating")
     return html.Div(
         children=[
             html.H3('Correlation between Rating and Revenue'),
             html.Hr(),
-            dcc.Graph(id='rating_revenue_graph'),
-            html.H6('Revenue Range:'),
-            html.Div([
-                dcc.RangeSlider(id='range_revenue',
-                                min=0,
-                                max=2000000000,
-                                value=[0, 200000000],
-                                marks=revenue_values,
-                                step=None
-                                )
-            ])
+            dcc.Graph(figure=scatter_plot)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
-
-
-@app.callback(
-    Output('rating_revenue_graph', 'figure'),
-    [Input('range_revenue', 'value')]
-)
-def update_rating_revenue(revenue_interval):
-    new_df = metadata[(metadata['revenue'] >= revenue_interval[0]) & (metadata['revenue'] <= revenue_interval[1])]
-
-    scatter_plot = px.scatter(
-        data_frame=new_df,
-        x='revenue',
-        y='rating',
-        height=550
-    )
-
-    return scatter_plot
 
 
 def display_revenue_budget():
@@ -368,12 +309,10 @@ def display_revenue_budget():
 
 
 def display_rating_release_time():
-    scatter_plot = px.scatter(metadata, x="release_date", y="rating")
     return html.Div(
         children=[
             html.H3('Correlation between Rating and Release Time'),
             html.Hr(),
-            dcc.Graph(figure=scatter_plot)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
@@ -397,7 +336,7 @@ def display_popularity_released_language():
 
 
 def display_average_revenue():
-    df, _ = analysis.calculate_avg_per_genre(metadata, 'revenue', revenue_per_genre)
+    df = analysis.calculate_avg_per_genre(metadata, 'revenue')
     fig = px.bar(
         data_frame=df, x=df['genre'], y=df['average revenue'],
         title='Average Revenue by Genre', color_discrete_sequence=['darkorange']*len(df)
@@ -414,7 +353,7 @@ def display_average_revenue():
 
 
 def display_average_rating():
-    df, _ = analysis.calculate_avg_per_genre(metadata, 'rating', rating_per_genre)
+    df = analysis.calculate_avg_per_genre(metadata, 'rating')
     fig = px.bar(
         data_frame=df, x=df['genre'], y=df['average rating'], range_y=[4.5, 6.5],
         title='Average Rating by Genre', color_discrete_sequence=['darkorange'] * len(df)
@@ -431,7 +370,7 @@ def display_average_rating():
 
 
 def display_average_budget():
-    df, _ = analysis.calculate_avg_per_genre(metadata, 'budget', budget_per_genre)
+    df = analysis.calculate_avg_per_genre(metadata, 'budget')
     fig = px.bar(
         data_frame=df, x=df['genre'], y=df['average budget'],
         title='Average Budget by Genre', color_discrete_sequence=['darkorange'] * len(df)
@@ -479,7 +418,7 @@ def display_common_keywords():
 
     pop_key = pd.DataFrame(columns= ["Keys"])
     pop_key['Keys'] = keys
-    value_counts = pop_key['Keys'].value_counts(dropna=True, sort=True)
+    # value_counts = pop_key['Keys'].value_counts(dropna=True, sort=True)
     # print(value_counts)
     pop_key = pop_key.value_counts().rename_axis('Keywords').reset_index(name='Count').head(15)
     # print(pop_key)
@@ -508,7 +447,7 @@ def display_popular_release_time():
 @app.callback(Output('page-content', 'children'),
               [Input('url', 'pathname')])
 def display_page(pathname):
-    print(pathname)
+    # print(pathname)
     if pathname == "/rating-budget":
         page = display_rating_budget()
     elif pathname == "/rating-revenue":
