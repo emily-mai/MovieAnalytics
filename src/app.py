@@ -18,8 +18,13 @@ metadata = utils.load_data()
 _, revenue_per_genre = analysis.calculate_avg_per_genre(metadata, 'revenue', per_genre=None)
 _, rating_per_genre = analysis.calculate_avg_per_genre(metadata, 'rating', per_genre=None)
 _, budget_per_genre = analysis.calculate_avg_per_genre(metadata, 'budget', per_genre=None)
-# pop_genres_count = utils.pop_genre_table(metadata)
-# pop_keys_count = utils.pop_keywords_table(metadata)
+
+pop_genres_count = utils.pop_genre_table(metadata)
+print(pop_genres_count)
+print(type(pop_genres_count))
+pop_keys_count = utils.pop_keywords_table(metadata)
+print(pop_keys_count)
+print(type(pop_keys_count))
 
 
 def display_table(df):

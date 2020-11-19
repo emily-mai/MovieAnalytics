@@ -149,59 +149,69 @@ def search(dataframe, query):
                 dataframe = dataframe.loc[dataframe[col_name].str.startswith(filter_value)]
     return dataframe
 
+  
+def pop_genre_table(df):
+    genres = []
+    for i in df["genres"]:
+        for j in i:
+            genres.append(j)
 
-# def pop_genre_table(df):
-#     genres = []
-#     for i in df["genres"]:
-#         for j in i:
-#             genres.append(j)
+    pop_genres = pd.DataFrame(columns=["Genres"])
+    pop_genres['Genres'] = genres
+    # value_counts = pop_genres['Genres'].value_counts(dropna=True, sort=True)
+    # pop_genres = pop_genres.value_counts().rename_axis('Genres').reset_index(name='Count', drop=False)
+    # pop_genres['Genres'].value_counts()
+    # pop_genres = pop_genres.groupby('Genres').agg()
+    # pop_genres['Genres'].value_counts()
+    # pop_genres2 = pop_genres.value_counts().rename_axis('Genres').reset_index(name='Count', drop=False).copy(deep=True)
+    # return pop_genres2
+    # return pop_genres.value_counts(index = pop_genres['Genres'], columns = ['Count'])
+    
+    
+    return pop_genres.value_counts().rename_axis('Genres').reset_index(name='Count', drop=False)
 
-#     pop_genres = pd.DataFrame(columns=["Genres"])
-#     pop_genres['Genres'] = genres
-#     value_counts = pop_genres['Genres'].value_counts(dropna=True, sort=True)
-#     pop_genres = pop_genres.value_counts().rename_axis('Genres').reset_index(name='Count')
-#     return pop_genres
-#
-#
-# def pop_keywords_table(df):
-#     keys = []
-#     for i in df["keywords"]:
-#         for j in i:
-#             keys.append(j)
-#
-#     pop_key = pd.DataFrame(columns=["Keys"])
-#     pop_key['Keys'] = keys
-#     value_counts = pop_key['Keys'].value_counts(dropna=True, sort=True)
-#     # print(value_counts)
-#     pop_key = pop_key.value_counts().rename_axis('Keywords').reset_index(name='Count')
-#     return pop_key
+def pop_keywords_table(df):
+    keys = []
+    for i in df["keywords"] :
+        for j in i :
+            keys.append(j)
+
+    pop_key = pd.DataFrame(columns= ["Keys"])
+    pop_key['Keys'] = keys
+    # value_counts = pop_key['Keys'].value_counts(dropna=True, sort=True)
+    # print(value_counts)
+    # pop_key['Keys'].value_counts()
+    # pop_key = pop_key.value_counts().rename_axis('Keywords').reset_index(name='Count')
+    # key_count = pop_key['Keys'].value_counts().to_dict()
+    # pop_keys = pd.DataFrame.from_dict(key_count)
+
+    return pop_key.value_counts().rename_axis('Keywords').reset_index(name='Count', drop=False)
 
 
-# def insert_genre_count(df, genres):
-#     for i in genres:
-#         for row in df.rows():
-#             if df.at[row, 0] == i:
-#                 df.at[row, 1] = df.at[row, 1] + 1
-#
-#
-# def insert_keyword_count(df, keywords):
-#     for i in keywords:
-#         for row in df.rows():
-#             if df.at[row, 0] == i:
-#                 df.at[row, 1] = df.at[row, 1] + 1
-#
-#
-# def remove_genre_count(df, genres):
-#     for i in genres:
-#         for row in df.rows():
-#             if df.at[row, 0] == i:
-#                 df.at[row, 1] = df.at[row, 1] - 1
-#
-#
-# def remove_keyword_count(df, keywords):
-#     for i in keywords:
-#         for row in df.rows():
-#             if df.at[row, 0] == i:
-#                 df.at[row, 1] = df.at[row, 1] - 1
+def insert_genre_count(df, genres):
+    for i in genres:
+        for index, row in df.iterrows():
+            if row['Genres'] == i:
+                row['Count'] = row['Count'] + 1
+    # print(df)
+
+def insert_keyword_count(df, keywords):
+    for i in keywords:
+        for index, row in df.iterrows():
+            if row['Keywords'] == i:
+                row['Count'] = row['Count'] + 1
+    # print(df)
+
+def remove_genre_count(df, genres):
+    for i in genres:
+        for index, row in df.iterrows():
+            if row['Genres'] == i:
+                row['Count'] = row['Count'] - 1
+
+def remove_keyword_count(df, keywords):
+    for i in keywords:
+        for index, row in df.iterrows():
+            if row['Keywords'] == i:
+                row['Count'] = row['Count'] - 1
 
 
