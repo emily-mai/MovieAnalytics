@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import re
 # this line can be commented out --> tells run time of for loops
-from tqdm import tqdm
+# from tqdm import tqdm
 
 
 # csv parser function
