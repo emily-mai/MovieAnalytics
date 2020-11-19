@@ -20,7 +20,7 @@ metadata = utils.load_data()
 revenue_values = {0: '0', 200000000: '200M', 400000000: '400M', 600000000: '600M', 800000000: '800M', 1000000000: '1B', 1200000000: '1.2B', 1400000000: '1.4B',
                   1600000000: '1.6B', 1800000000: '1.8B', 2000000000: '2B'}
 
-
+budget_values = {0: '0', 50000000: '50M', 100000000: '100M', 150000000: '150M', 200000000: '200M', 250000000: '250M', 300000000: '300M', 350000000: '350M', 400000000: '400M'}
 def display_table(df):
     table = dash_table.DataTable(
         id='table',
@@ -248,15 +248,42 @@ def display_home():
 
 
 def display_rating_budget():
-    scatter_plot = px.scatter(metadata, x="budget", y="rating")
+    # scatter_plot = px.scatter(metadata, x="budget", y="rating")
     return html.Div(
         children=[
             html.H3('Correlation between Rating and Budget'),
             html.Hr(),
-            dcc.Graph(figure=scatter_plot)
+            dcc.Graph(id='rating_budget_graph'),
+            html.H6('Budget Range:'),
+            html.Div([
+                dcc.RangeSlider(id='range_budget',
+                                min=0,
+                                max=400000000,
+                                value=[0, 50000000],
+                                marks=budget_values,
+                                step=None
+                                )
+            ])
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
+
+
+@app.callback(
+    Output('rating_budget_graph', 'figure'),
+    [Input('range_budget', 'value')]
+)
+def update_rating_revenue(budget_interval):
+    new_df = metadata[(metadata['budget'] >= budget_interval[0]) & (metadata['budget'] <= budget_interval[1])]
+
+    scatter_plot = px.scatter(
+        data_frame=new_df,
+        x='budget',
+        y='rating',
+        height=550
+    )
+
+    return scatter_plot
 
 
 def display_rating_revenue():
@@ -271,7 +298,7 @@ def display_rating_revenue():
                 dcc.RangeSlider(id='range_revenue',
                                 min=0,
                                 max=2000000000,
-                                value=[0, 100000000],
+                                value=[0, 200000000],
                                 marks=revenue_values,
                                 step=None
                                 )
