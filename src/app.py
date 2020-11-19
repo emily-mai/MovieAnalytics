@@ -17,6 +17,8 @@ metadata = utils.load_data()
 _, revenue_per_genre = analysis.calculate_avg_per_genre(metadata, 'revenue', per_genre=None)
 _, rating_per_genre = analysis.calculate_avg_per_genre(metadata, 'rating', per_genre=None)
 _, budget_per_genre = analysis.calculate_avg_per_genre(metadata, 'budget', per_genre=None)
+pop_genres_count = utils.pop_genre_table(metadata)
+pop_keys_count = utils.pop_keywords_table(metadata)
 
 revenue_values = {0: '0', 200000000: '200M', 400000000: '400M', 600000000: '600M', 800000000: '800M', 1000000000: '1B', 1200000000: '1.2B', 1400000000: '1.4B',
                   1600000000: '1.6B', 1800000000: '1.8B', 2000000000: '2B'}
@@ -130,6 +132,21 @@ def submit_edit(n_clicks, inputs):
             input_value = input_dict.get('value')
             row_index = input_group.get('props').get('key')
             row.append(input_value)
+        
+        before_edit_genre = metadata.loc[row_index, 'genre']                            # Set before value
+        after_edit_genre = row[14]                                                       # Find the appropriate genre column in row
+        added_genres = list(set(after_edit_genre) - set(before_edit_genre))             # Added genres is the after - before
+        utils.insert_genre_count(pop_genres_count, added_genres)                       # Update the inserted genres count
+        removed_genres = list(set(before_edit_genre) - set(after_edit_genre))           # Removed genres is the before - after
+        utils.remove_genre_count(pop_genres_count, removed_genres)                     # Decrement the count for each removed genre
+
+        before_edit_keywords = metadata.loc[row_index, 'keywords']                      # Set before value
+        after_edit_keywords = row[15]                                                    # Set after value
+        added_keywords = list(set(after_edit_keywords) - set(before_edit_keywords))     # Added genres is the after - before
+        utils.insert_keyword_count(pop_keys_count, added_keywords)                     # Update the inserted genres count
+        removed_keywords = list(set(before_edit_keywords) - set(after_edit_keywords))   # Removed genres is the before - after
+        utils.remove_keyword_count(pop_keys_count, removed_keywords)                   # Decrement the count for each removed genre
+
         metadata.loc[row_index] = row
         return display_table(metadata)
 
@@ -184,6 +201,13 @@ def submit_insert(n_clicks, inputs):
                 row.append(ast.literal_eval(input_value))
             else:
                 row.append(input_value)
+        
+        added_genres = row[14]                                                          # Find the appropriate genre column in row
+        utils.insert_genre_count(pop_genres_count, added_genres)                       # Update the inserted genres count
+
+        added_keywords = row[15]
+        utils.insert_keyword_count(pop_keys_count, added_keywords)
+
         metadata.loc[len(metadata)] = row
         global revenue_per_genre, rating_per_genre, budget_per_genre
         revenue_per_genre, rating_per_genre, budget_per_genre = analysis.update_avgs_per_genre(
