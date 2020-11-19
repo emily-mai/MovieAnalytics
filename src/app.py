@@ -396,15 +396,34 @@ def update_revenue_budget(budget_interval):
 
 
 def display_rating_release_time():
-    scatter_plot = px.scatter(metadata, x="release_date", y="rating")
+    # scatter_plot = px.scatter(metadata, x="release_date", y="rating")
     return html.Div(
         children=[
             html.H3('Correlation between Rating and Release Time'),
             html.Hr(),
-            dcc.Graph(figure=scatter_plot)
+            dcc.RadioItems(id='rating-time-radio',
+                           options=[
+                               {'label': 'Linear', 'value': 'Linear'},
+                               {'label': 'Scatter', 'value': 'Scatter'}
+                           ],
+                           value='Scatter',
+                           labelStyle={'display': 'inline-block'}
+
+            ),
+            dcc.Graph(id='rating-time-graph')
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
+
+@app.callback(
+    Output('rating-time-graph', 'figure'),
+    [Input('rating-time-radio', 'value')]
+)
+def update_rating_release_time(value_choice):
+    if value_choice == 'Scatter':
+        return px.scatter(metadata, x="release_date", y="rating")
+    else:
+        return px.line(metadata, x="release_date", y="rating")
 
 
 def display_popularity_released_language():
@@ -418,10 +437,36 @@ def display_popularity_released_language():
         children=[
             html.H3('Correlation between Popularity and Released Language'),
             html.Hr(),
-            dcc.Graph(figure=scatter_plot)
+            dcc.RadioItems(id='popularity-language-radio',
+                           options=[
+                               {'label': 'Linear', 'value': 'Linear'},
+                               {'label': 'Scatter', 'value': 'Scatter'}
+                           ],
+                           value='Scatter',
+                           labelStyle={'display': 'inline-block'}
+                           ),
+
+            dcc.Graph(id='popularity-language-graph')
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
+
+
+@app.callback(
+    Output('popularity-language-graph', 'figure'),
+    [Input('popularity-language-radio', 'value')]
+)
+def update_popularity_released_language(chosen_value):
+    languages_votes = metadata[["spoken_languages", "rating"]]
+    num_languages = []
+    for i in metadata["spoken_languages"]:
+        num_languages.append(len(i))
+    languages_votes["num_languages"] = num_languages
+
+    if chosen_value == 'Scatter':
+        return px.scatter(data_frame=languages_votes, x="num_languages", y="rating")
+    else:
+        return px.line(data_frame=languages_votes, x="num_languages", y="rating")
 
 
 def display_average_revenue():
