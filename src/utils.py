@@ -166,9 +166,9 @@ def pop_genre_table(df):
     # pop_genres2 = pop_genres.value_counts().rename_axis('Genres').reset_index(name='Count', drop=False).copy(deep=True)
     # return pop_genres2
     # return pop_genres.value_counts(index = pop_genres['Genres'], columns = ['Count'])
-    
-    
+
     return pop_genres.value_counts().rename_axis('Genres').reset_index(name='Count', drop=False)
+
 
 def pop_keywords_table(df):
     keys = []
@@ -192,26 +192,37 @@ def insert_genre_count(df, genres):
     for i in genres:
         for index, row in df.iterrows():
             if row['Genres'] == i:
+                print(row)
                 row['Count'] = row['Count'] + 1
+                print(row)
     # print(df)
+
 
 def insert_keyword_count(df, keywords):
     for i in keywords:
         for index, row in df.iterrows():
             if row['Keywords'] == i:
+                print(row)
                 row['Count'] = row['Count'] + 1
+                print(row)
     # print(df)
+
 
 def remove_genre_count(df, genres):
     for i in genres:
         for index, row in df.iterrows():
             if row['Genres'] == i:
+                print(row)
                 row['Count'] = row['Count'] - 1
+                print(row)
+
 
 def remove_keyword_count(df, keywords):
     for i in keywords:
         for index, row in df.iterrows():
             if row['Keywords'] == i:
+                print(row)
                 row['Count'] = row['Count'] - 1
+                print(row)
 
 
