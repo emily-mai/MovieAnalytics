@@ -17,6 +17,9 @@ app.title = 'Movie Analytics'
 app.config['suppress_callback_exceptions'] = True
 metadata = utils.load_data()
 
+revenue_values = {0: '0', 200000000: '200M', 400000000: '400M', 600000000: '600M', 800000000: '800M', 1000000000: '1B', 1200000000: '1.2B', 1400000000: '1.4B',
+                  1600000000: '1.6B', 1800000000: '1.8B', 2000000000: '2B'}
+
 
 def display_table(df):
     table = dash_table.DataTable(
@@ -257,15 +260,42 @@ def display_rating_budget():
 
 
 def display_rating_revenue():
-    scatter_plot = px.scatter(metadata, x="revenue", y="rating")
+    # scatter_plot = px.scatter(metadata, x="revenue", y="rating")
     return html.Div(
         children=[
             html.H3('Correlation between Rating and Revenue'),
             html.Hr(),
-            dcc.Graph(figure=scatter_plot)
+            dcc.Graph(id='rating_revenue_graph'),
+            html.H6('Revenue Range:'),
+            html.Div([
+                dcc.RangeSlider(id='range_revenue',
+                                min=0,
+                                max=2000000000,
+                                value=[0, 100000000],
+                                marks=revenue_values,
+                                step=None
+                                )
+            ])
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
+
+
+@app.callback(
+    Output('rating_revenue_graph', 'figure'),
+    [Input('range_revenue', 'value')]
+)
+def update_rating_revenue(revenue_interval):
+    new_df = metadata[(metadata['revenue'] >= revenue_interval[0]) & (metadata['revenue'] <= revenue_interval[1])]
+
+    scatter_plot = px.scatter(
+        data_frame=new_df,
+        x='revenue',
+        y='rating',
+        height=550
+    )
+
+    return scatter_plot
 
 
 def display_revenue_budget():
