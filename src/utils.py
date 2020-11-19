@@ -155,7 +155,7 @@ def search(dataframe, query):
 #     for i in df["genres"]:
 #         for j in i:
 #             genres.append(j)
-#
+
 #     pop_genres = pd.DataFrame(columns=["Genres"])
 #     pop_genres['Genres'] = genres
 #     value_counts = pop_genres['Genres'].value_counts(dropna=True, sort=True)

@@ -129,7 +129,6 @@ def submit_edit(n_clicks, inputs):
             input_dict = input_group.get('props').get('children')[1].get('props')
             input_value = input_dict.get('value')
             row_index = input_group.get('props').get('key')
-            print(input_value)
             if input_value.isdigit():
                 updated_row.append(int(input_value))
             elif "[" in input_value:

@@ -49,7 +49,7 @@ def update_avgs_per_genre_insert(movie, revenue_per_genre, rating_per_genre, bud
     rating_val = float(movie[12])
     # for every genre, increment count and add value of newly added item to sum for revenue, rating, budget
     for genre in genre_val:
-        print(genre)
+        # print(genre)
         if genre in revenue_per_genre:
             feature_sum, count = revenue_per_genre.get(genre)
             revenue_per_genre[genre] = (feature_sum + revenue_val, count + 1)
