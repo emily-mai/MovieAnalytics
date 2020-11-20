@@ -1,5 +1,5 @@
-import src.utils as utils
-import src.analysis as analysis
+import utils as utils
+import analysis as analysis
 import dash
 import dash_core_components as dcc
 import dash_table
@@ -68,6 +68,30 @@ def display_table(df):
         tooltip_duration=None
     )
     return html.Div(id='data_table', children=table, style={'height': 800})
+
+
+@app.callback(
+    Output('table', 'data'),
+    [Input('table', 'data_previous')],  # data_previous stores the initial dataframe only after an edit is made
+    [State('table', 'data')]  # data holds the current data of the datatable
+)
+def row_delete(previous_data, current_data):
+    # if the table has not been modified
+    if previous_data is None:
+        dash.exceptions.PreventUpdate()
+    else:
+        # declare it global in function to modify
+        global metadata
+
+        # find difference between previous_data and current_data
+        diff_row = []
+
+        for i in (previous_data + current_data):
+            if i not in previous_data or i not in current_data:
+                diff_row.append(i)
+        # redefine the dataframe to exclude any entry with the title of the movie that is to be deleted
+        metadata = metadata[metadata.original_title != diff_row[0].get('original_title')]
+    return current_data
 
 
 @app.callback(
