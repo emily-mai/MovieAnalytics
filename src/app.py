@@ -5,12 +5,9 @@ import dash_core_components as dcc
 import dash_table
 import dash_html_components as html
 import dash_bootstrap_components as dbc
-import pandas as pd
 import ast
-import plotly
+import time
 import plotly.express as px
-import plotly.io as pio
-import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State
 
 app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
@@ -18,16 +15,18 @@ app.title = 'Movie Analytics'
 app.config['suppress_callback_exceptions'] = True
 metadata = utils.load_data()
 # set dataframe that is returned to '_' because not used
+start_time = time.time()
 _, revenue_per_genre = analysis.calculate_avg_per_genre(metadata, 'revenue', per_genre=None)
+print("Average Calculation Runtime: ")
+print(time.time()-start_time)
 _, rating_per_genre = analysis.calculate_avg_per_genre(metadata, 'rating', per_genre=None)
 _, budget_per_genre = analysis.calculate_avg_per_genre(metadata, 'budget', per_genre=None)
 
-pop_genres_count = utils.pop_genre_table(metadata)
-# print(pop_genres_count)
-# print(type(pop_genres_count))
-pop_keys_count = utils.pop_keywords_table(metadata)
-# print(pop_keys_count)
-# print(type(pop_keys_count))
+start_time = time.time()
+pop_genres_count = analysis.calculate_pop_feature_count(metadata, "genres")
+pop_keys_count = analysis.calculate_pop_feature_count(metadata, "keywords")
+print("Most Popular Analytics Calculation Runtime: ")
+print(time.time()-start_time)
 
 
 def display_table(df):
@@ -93,6 +92,42 @@ def toggle_navbar_collapse(n, is_open):
 
 
 @app.callback(
+    Output('table', 'data'),
+    [Input('table', 'data_previous')],  # data_previous stores the initial dataframe only after an edit is made
+    [State('table', 'data')]  # data holds the current data of the datatable
+)
+def row_delete(previous_data, current_data):
+    # if the table has not been modified
+    if previous_data is None:
+        dash.exceptions.PreventUpdate()
+    else:
+        # declare it global in function to modify
+        global metadata, revenue_per_genre, rating_per_genre, budget_per_genre
+
+        # find difference between previous_data and current_data
+        diff_row = []
+        for row in previous_data + current_data:
+            if row not in previous_data or row not in current_data:
+                diff_row.append(row)
+        # redefine the dataframe to exclude any entry with the title of the movie that is to be deleted
+        metadata = metadata[metadata.original_title != diff_row[0].get('original_title')]
+        # update analytics
+        for row in diff_row:
+            row = list(row.values())
+            global revenue_per_genre, rating_per_genre, budget_per_genre, pop_genres_count, pop_keys_count
+            revenue_per_genre, rating_per_genre, budget_per_genre = analysis.update_avgs_per_genre_delete(
+                row, revenue_per_genre, rating_per_genre, budget_per_genre
+            )
+            update_start_time = time.time()
+            for i in range(1000):
+                pop_genres_count = analysis.subtract_count(pop_genres_count, row[14])  # Update the inserted genres count
+                pop_keys_count = analysis.subtract_count(pop_keys_count, row[15])
+            print("Incremental Most Popular Genre Calculation Runtime: ")
+            print("%.20f" % ((time.time() - update_start_time) / 1000))
+    return current_data
+
+
+@app.callback(
     Output("edit-modal-div", "children"),
     [Input("table", "active_cell")]
 )
@@ -143,6 +178,7 @@ def submit_edit(n_clicks, inputs):
                 updated_row.append(ast.literal_eval(input_value))
             else:
                 updated_row.append(input_value)
+
         # assigns old_row to the row containing data of the movie before edit
         old_row = metadata.loc[row_index]
         global revenue_per_genre, rating_per_genre, budget_per_genre
@@ -151,21 +187,20 @@ def submit_edit(n_clicks, inputs):
         )
 
         before_edit_genre = metadata.loc[row_index, 'genres']  # Set before value
-
         after_edit_genre = updated_row[14]  # Find the appropriate genre column in row
         added_genres = list(set(after_edit_genre) - set(before_edit_genre))  # Added genres is the after - before
-        utils.insert_genre_count(pop_genres_count, added_genres)  # Update the inserted genres count
+        analysis.add_count(pop_genres_count, added_genres)  # Update the inserted genres count
         removed_genres = list(set(before_edit_genre) - set(after_edit_genre))  # Removed genres is the before - after
-        utils.remove_genre_count(pop_genres_count, removed_genres)  # Decrement the count for each removed genre
+        analysis.subtract_count(pop_genres_count, removed_genres)  # Decrement the count for each removed genre
 
         before_edit_keywords = metadata.loc[row_index, 'keywords']  # Set before value
         after_edit_keywords = updated_row[15]  # Set after value
         added_keywords = list(
             set(after_edit_keywords) - set(before_edit_keywords))  # Added genres is the after - before
-        utils.insert_keyword_count(pop_keys_count, added_keywords)  # Update the inserted genres count
+        analysis.add_count(pop_keys_count, added_keywords)  # Update the inserted genres count
         removed_keywords = list(
             set(before_edit_keywords) - set(after_edit_keywords))  # Removed genres is the before - after
-        utils.remove_keyword_count(pop_keys_count, removed_keywords)  # Decrement the count for each removed genre
+        analysis.subtract_count(pop_keys_count, removed_keywords)  # Decrement the count for each removed genre
 
         metadata.loc[row_index] = updated_row
         return display_table(metadata)
@@ -222,11 +257,16 @@ def submit_insert(n_clicks, inputs):
             else:
                 row.append(input_value)
 
-        added_genres = row[14]  # Find the appropriate genre column in row
-        utils.insert_genre_count(pop_genres_count, added_genres)  # Update the inserted genres count
-
-        added_keywords = row[15]
-        utils.insert_keyword_count(pop_keys_count, added_keywords)
+        # update analytics
+        global pop_genres_count, pop_keys_count
+        update_start_time = time.time()
+        for i in range(1000):
+            added_genres = row[14]  # Find the appropriate genre column in row
+            pop_genres_count = analysis.add_count(pop_genres_count, added_genres)  # Update the inserted genres count
+            added_keywords = row[15]
+            pop_keys_count = analysis.add_count(pop_keys_count, added_keywords)
+        print("Incremental Most Popular Genre Calculation Runtime: ")
+        print("%.20f" % ((time.time() - update_start_time)/1000))
 
         global revenue_per_genre, rating_per_genre, budget_per_genre
         revenue_per_genre, rating_per_genre, budget_per_genre = analysis.update_avgs_per_genre_insert(
@@ -438,7 +478,7 @@ def update_rating_release_time(value_choice):
 def display_popularity_released_language():
     languages_votes = metadata[["spoken_languages", "rating"]]
     num_languages = []
-    for i in metadata["spoken_languages"] :
+    for i in metadata["spoken_languages"]:
         num_languages.append(len(i))
     languages_votes["num_languages"] = num_languages
     scatter_plot = px.scatter(data_frame = languages_votes, x = "num_languages", y = "rating")
@@ -479,7 +519,10 @@ def update_popularity_released_language(chosen_value):
 
 
 def display_average_revenue():
+    start_time = time.time()
     df, _ = analysis.calculate_avg_per_genre(metadata, 'revenue', revenue_per_genre)
+    print("Incremental Average Calculation Runtime: ")
+    print(time.time()-start_time)
     fig = px.bar(
         data_frame=df, x=df['genre'], y=df['average revenue'],
         title='Average Revenue by Genre', color_discrete_sequence=['darkorange']*len(df)
@@ -490,18 +533,15 @@ def display_average_revenue():
             html.H3('Average Revenue'),
             html.Hr(),
             dcc.Graph(figure=fig, id='avg revenue'),
-            ###Ricardo Interactive Analytics START ******###
             html.H6('Sort: High to Low'),
             html.Div([
                 html.Button('View in New Tab', id='SortAvgRev'),
             ])
-            ###Ricardo Interactive Analytics###
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
 
 
-###Ricardo Interactive Analytics###
 @app.callback(
     Output('avg revenue', 'fig'),
     [Input('SortAvgRev', 'n_clicks')]
@@ -515,7 +555,6 @@ def revenue_high_to_low(n_clicks):
         )
         fig.update_layout(xaxis={'categoryorder': 'total descending'})
         return fig.show()
-###Ricardo Interactive Analytics ******END###
 
 
 def display_average_rating():
@@ -530,18 +569,15 @@ def display_average_rating():
             html.H3('Average Rating'),
             html.Hr(),
             dcc.Graph(figure=fig, id='avg rating'),
-            ###Ricardo Interactive Analytics START ******###
             html.H6('Sort: High to Low'),
             html.Div([
                 html.Button('View in New Tab', id='SortAvgRat'),
             ])
-            ###Ricardo Interactive Analytics###
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
 
 
-###Ricardo Interactive Analytics###
 @app.callback(
     Output('avg rating', 'fig'),
     [Input('SortAvgRat', 'n_clicks')]
@@ -555,7 +591,6 @@ def rating_high_to_low(n_clicks):
         )
         fig.update_layout(xaxis={'categoryorder': 'total descending'})
         return fig.show()
-###Ricardo Interactive Analytics ******END###
 
 
 def display_average_budget():
@@ -570,18 +605,15 @@ def display_average_budget():
             html.H3('Average Budget'),
             html.Hr(),
             dcc.Graph(figure=fig, id="avg budget"),
-            ###Ricardo Interactive Analytics START ******###
             html.H6('Sort: High to Low'),
             html.Div([
                 html.Button('View in New Tab', id='SortAvgBud'),
             ])
-            ###Ricardo Interactive Analytics###
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
 
 
-###Ricardo Interactive Analytics###
 @app.callback(
     Output('avg budget', 'fig'),
     [Input('SortAvgBud', 'n_clicks')]
@@ -595,23 +627,13 @@ def rating_high_to_low(n_clicks):
         )
         fig.update_layout(xaxis={'categoryorder': 'total descending'})
         return fig.show()
-###Ricardo Interactive Analytics ******END###
 
 
 def display_popular_movies():
-    genres = []
-    for i in metadata["genres"]:
-        for j in i:
-            genres.append(j)
-
-    pop_genres = pd.DataFrame(columns=["Genres"])
-    pop_genres['Genres'] = genres
-    value_counts = pop_genres['Genres'].value_counts(dropna=True, sort=True)
-    pop_genres = pop_genres.value_counts().rename_axis('Genres').reset_index(name='Count')
-    fig = px.bar(pop_genres, x='Genres', y='Count', title='Most Frequent Genres',
-                 color_discrete_sequence=['darkorange'] * len(pop_genres)
+    fig = px.bar(x=list(pop_genres_count.keys()), y=list(pop_genres_count.values()), title='Most Frequent Genres',
+                 color_discrete_sequence=['darkorange'] * len(pop_genres_count)
                  )
-    fig.update_layout(title_x=0.5)
+    fig.update_layout(title_x=0.5, xaxis_title="genre", yaxis_title="count")
     return html.Div(
         children=[
             html.H3('Most Popular Movies'),
@@ -623,19 +645,9 @@ def display_popular_movies():
 
 
 def display_common_keywords():
-    keys = []
-    for i in metadata["keywords"]:
-        for j in i:
-            keys.append(j)
-
-    pop_key = pd.DataFrame(columns=["Keys"])
-    pop_key['Keys'] = keys
-    value_counts = pop_key['Keys'].value_counts(dropna=True, sort=True)
-    # print(value_counts)
-    pop_key = pop_key.value_counts().rename_axis('Keywords').reset_index(name='Count').head(15)
-    # print(pop_key)
-    fig = px.bar(pop_key, x='Keywords', y='Count', title='Most Common Keywords (TOP 15)',
-                 color_discrete_sequence=['darkorange'] * len(pop_key))
+    fig = px.bar(x=list(pop_keys_count.keys()), y=list(pop_keys_count.values()), title='Most Common Keywords (TOP 15)',
+                 color_discrete_sequence=['darkorange'] * len(pop_keys_count))
+    fig.update_layout(xaxis_title="keyword", yaxis_title="count")
     return html.Div(
         children=[
             html.H3('Most Common Keywords'),
