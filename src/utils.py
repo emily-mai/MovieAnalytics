@@ -1,8 +1,5 @@
 import pandas as pd
-import numpy as np
 import re
-# this line can be commented out --> tells run time of for loops
-from tqdm import tqdm
 
 
 # csv parser function
@@ -28,8 +25,8 @@ def parse_csv(filepath, contains_header=False):
             words = re.split(r',(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))', line)
             row = []
             for word in words:
-                if word.isdigit():
-                    row.append(int(word))
+                if word.replace('.', '', 1).isdigit():
+                    row.append(float(word))
                 else:
                     row.append(word)
             data.append(row)
@@ -90,10 +87,14 @@ def load_data():
     kwords.set_index('id', inplace=True)
 
     meta = pd.concat([meta, kwords], axis=1, join='inner').reset_index()
-    meta = meta.drop(['adult', 'belongs_to_collection', 'imdb_id', 'title', 'video', 'id'], axis=1)
+    meta = meta.drop(['adult', 'belongs_to_collection', 'imdb_id', 'title', 'video', 'id', 'homepage', 'poster_path',
+                      'status', 'original_language', 'popularity'], axis=1)
     meta = clean_dataframe(meta,
                            ['genres', 'keywords', 'production_companies', 'production_countries', 'spoken_languages'])
     meta = meta.rename(columns={"vote_average": "rating"})
+    meta = meta[meta['rating'] != 0]
+    meta = meta[meta['budget'] != 0]
+    meta = meta[meta['revenue'] != 0]
     return meta
 
 
@@ -122,33 +123,27 @@ def clean_dataframe(df, columns):
     return df
 
 
-def search(dataframe, query):
+def search(dataframe, query, dropdown_vals):
     """
     :param dataframe: dataframe object to perform search on
-    :param query: query string to filter data
+    :param query: query string to filter
+    :param dropdown_vals: list of column headers
     :return: dataframe of query results
     """
-    if query is not None:
-        # split multiple queries and process sequentially
-        filtering_expressions = query.split(' && ')
-        for filter_part in filtering_expressions:
-            col_name, operator, filter_value = split_filter_part(filter_part)
-            # print(col_name, operator, filter_value)
-            # these operators match pandas series operator method names
-            if operator in ('eq', 'ne', 'lt', 'le', 'gt', 'ge'):
-                dataframe = dataframe.loc[getattr(dataframe[col_name], operator)(filter_value)]
-            elif operator == 'contains':
-                filter_value = {filter_value}
-                isfilter_value = filter_value.issubset
-                dataframe[col_name] = [[] if x is np.NaN else x for x in dataframe[col_name]]
-                values = dataframe[col_name].values.tolist()
-                dataframe = dataframe[[isfilter_value(val) for val in values]]
-            elif operator == 'datestartswith':
-                # this is a simplification of the front-end filtering logic,
-                # only works with complete fields in standard format
-                dataframe = dataframe.loc[dataframe[col_name].str.startswith(filter_value)]
-    return dataframe
-
-
-
-
+    result = pd.DataFrame()
+    if query is not None and dropdown_vals is not None:
+        for header in dropdown_vals:
+            series = dataframe[header].dropna()
+            if isinstance(series[0], list):
+                df_filtered = dataframe[pd.DataFrame(series.tolist()).isin([query]).values]
+                result = result.append(df_filtered)
+            if isinstance(series[0], str) \
+                    and not query.replace('.', '', 1).isdigit() \
+                    and not series[0].replace('.', '', 1).isdigit():
+                df_filtered = dataframe[series.str.contains(query)]
+                result = result.append(df_filtered)
+            if isinstance(series[0], float) and query.replace('.', '', 1).isdigit():
+                bools = [float(query) == x if x is not None else False for x in dataframe[header]]
+                df_filtered = dataframe[bools]
+                result = result.append(df_filtered)
+    return result

@@ -43,10 +43,11 @@ def update_avgs_per_genre_insert(movie, revenue_per_genre, rating_per_genre, bud
     :param budget_per_genre: dictionary of the count and sum by genre for budget
     :return: dictionaries of the count and sum by genre for revenue, rating, and budget
     """
-    genre_val = movie[14]
-    revenue_val = int(movie[8])
-    budget_val = int(movie[0])
-    rating_val = float(movie[12])
+    genre_val = movie[9]
+    print(movie)
+    revenue_val = float(movie[4])
+    budget_val = float(movie[0])
+    rating_val = float(movie[7])
     # for every genre, increment count and add value of newly added item to sum for revenue, rating, budget
     for genre in genre_val:
         # print(genre)
@@ -73,12 +74,12 @@ def update_avgs_per_genre_delete(movie, revenue_per_genre, rating_per_genre, bud
     :param revenue_per_genre: dictionary of the count and sum by genre for revenue
     :param rating_per_genre: dictionary of the count and sum by genre for rating
     :param budget_per_genre: dictionary of the count and sum by genre for budget
-    :return: dictionaries of the updated count and sum by genre for revenue, rating, and budget after removal of old data
+    :return: dictionaries of the updated count and sum by genre for revenue, rating, and budget after removing old data
     """
-    genre_val = movie[14]
-    revenue_val = int(movie[8])
-    budget_val = int(movie[0])
-    rating_val = float(movie[12])
+    genre_val = movie[9]
+    revenue_val = float(movie[4])
+    budget_val = float(movie[0])
+    rating_val = float(movie[7])
     # for every genre, decrement count and the subtract value of old item from sum for revenue, rating, budget
     for genre in genre_val:
         if genre in revenue_per_genre:
@@ -101,7 +102,7 @@ def update_avgs_per_genre_edit(old_movie, updated_movie, revenue_per_genre, rati
     :param revenue_per_genre: dictionary of the count and sum by genre for revenue
     :param rating_per_genre: dictionary of the count and sum by genre for rating
     :param budget_per_genre: dictionary of the count and sum by genre for budget
-    :return: dictionaries of the updated count and sum by genre for revenue, rating, and budget after removal of old data
+    :return: dictionaries of the updated count and sum by genre for revenue, rating, and budget after removing old data
     """
     # once edit is made, remove old data and update the count and sum
     deleted_result = update_avgs_per_genre_delete(old_movie, revenue_per_genre, rating_per_genre, budget_per_genre)
@@ -138,4 +139,3 @@ def subtract_count(dictionary, features):
             count = dictionary.get(i)
             dictionary[i] = count - 1
     return dictionary
-

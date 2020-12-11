@@ -1,5 +1,5 @@
-import utils as utils
-import analysis as analysis
+import src.utils as utils
+import src.analysis as analysis
 import dash
 import dash_core_components as dcc
 import dash_table
@@ -10,23 +10,19 @@ import time
 import plotly.express as px
 from dash.dependencies import Input, Output, State
 
-app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY])
+app = dash.Dash(external_stylesheets=[dbc.themes.FLATLY, "assets/stylesheet.css"])
 app.title = 'Movie Analytics'
 app.config['suppress_callback_exceptions'] = True
 metadata = utils.load_data()
+
 # set dataframe that is returned to '_' because not used
-start_time = time.time()
 _, revenue_per_genre = analysis.calculate_avg_per_genre(metadata, 'revenue', per_genre=None)
-print("Average Calculation Runtime: ")
-print(time.time()-start_time)
 _, rating_per_genre = analysis.calculate_avg_per_genre(metadata, 'rating', per_genre=None)
 _, budget_per_genre = analysis.calculate_avg_per_genre(metadata, 'budget', per_genre=None)
 
-start_time = time.time()
 pop_genres_count = analysis.calculate_pop_feature_count(metadata, "genres")
 pop_keys_count = analysis.calculate_pop_feature_count(metadata, "keywords")
-print("Most Popular Analytics Calculation Runtime: ")
-print(time.time()-start_time)
+pop_companies_count = analysis.calculate_pop_feature_count(metadata, "production_companies")
 
 
 def display_table(df):
@@ -36,10 +32,9 @@ def display_table(df):
         data=df.to_dict('records'),
         css=[{'selector': '.row', 'rule': 'margin: 0'}],
         fixed_rows={'headers': True},
-        # page_action='custom',
-        page_size=50,
+        virtualization=True,
+        page_size=10,
         page_current=0,
-        # sort_action="native",
         row_deletable=True,
         style_data_conditional=[
             {
@@ -55,52 +50,27 @@ def display_table(df):
             'color': 'black',
             'overflow': 'hidden',
             'textOverflow': 'ellipsis',
-            # 'maxWidth': 0,
             'minWidth': '180px', 'width': '180px', 'maxWidth': '180px',
         },
-        tooltip_data=[
-            {
-                column: {'value': str(value), 'type': 'markdown'}
-                for column, value in row.items()
-            } for row in df.to_dict('rows')
-        ],
-        tooltip_duration=None
+        # tooltip_data=[
+        #     {
+        #         column: {'value': str(value), 'type': 'markdown'}
+        #         for column, value in row.items()
+        #     } for row in df.to_dict('rows')
+        # ],
+        # tooltip_duration=None
     )
     return html.Div(id='data_table', children=table, style={'height': 800})
 
 
 @app.callback(
-    Output('table', 'data'),
-    [Input('table', 'data_previous')],  # data_previous stores the initial dataframe only after an edit is made
-    [State('table', 'data')]  # data holds the current data of the datatable
-)
-def row_delete(previous_data, current_data):
-    # if the table has not been modified
-    if previous_data is None:
-        dash.exceptions.PreventUpdate()
-    else:
-        # declare it global in function to modify
-        global metadata
-
-        # find difference between previous_data and current_data
-        diff_row = []
-
-        for i in (previous_data + current_data):
-            if i not in previous_data or i not in current_data:
-                diff_row.append(i)
-        # redefine the dataframe to exclude any entry with the title of the movie that is to be deleted
-        metadata = metadata[metadata.original_title != diff_row[0].get('original_title')]
-    return current_data
-
-
-@app.callback(
     Output('search-output', "children"),
     [Input('button1', "n_clicks")],
-    [State('search-bar', "value")])
-def search(n_clicks, value):
+    [State('search-bar', "value"), State('dropdown', "value")])
+def search(n_clicks, search_val, dropdown_vals):
     if n_clicks is not None:
-        print(value)
-        result = utils.search(metadata, query=value)
+        print(search_val)
+        result = utils.search(metadata, query=search_val, dropdown_vals=dropdown_vals)
         return display_table(result)
 
 
@@ -121,13 +91,12 @@ def toggle_navbar_collapse(n, is_open):
     [State('table', 'data')]  # data holds the current data of the datatable
 )
 def row_delete(previous_data, current_data):
+    # declare it global in function to modify
+    global metadata, revenue_per_genre, rating_per_genre, budget_per_genre
     # if the table has not been modified
     if previous_data is None:
         dash.exceptions.PreventUpdate()
     else:
-        # declare it global in function to modify
-        global metadata, revenue_per_genre, rating_per_genre, budget_per_genre
-
         # find difference between previous_data and current_data
         diff_row = []
         for row in previous_data + current_data:
@@ -143,11 +112,10 @@ def row_delete(previous_data, current_data):
                 row, revenue_per_genre, rating_per_genre, budget_per_genre
             )
             update_start_time = time.time()
-            for i in range(1000):
-                pop_genres_count = analysis.subtract_count(pop_genres_count, row[14])  # Update the inserted genres count
-                pop_keys_count = analysis.subtract_count(pop_keys_count, row[15])
+            pop_genres_count = analysis.subtract_count(pop_genres_count, row[9])
+            pop_keys_count = analysis.subtract_count(pop_keys_count, row[10])
             print("Incremental Most Popular Genre Calculation Runtime: ")
-            print("%.20f" % ((time.time() - update_start_time) / 1000))
+            print(time.time() - update_start_time)
     return current_data
 
 
@@ -211,14 +179,14 @@ def submit_edit(n_clicks, inputs):
         )
 
         before_edit_genre = metadata.loc[row_index, 'genres']  # Set before value
-        after_edit_genre = updated_row[14]  # Find the appropriate genre column in row
+        after_edit_genre = updated_row[9]  # Find the appropriate genre column in row
         added_genres = list(set(after_edit_genre) - set(before_edit_genre))  # Added genres is the after - before
         analysis.add_count(pop_genres_count, added_genres)  # Update the inserted genres count
         removed_genres = list(set(before_edit_genre) - set(after_edit_genre))  # Removed genres is the before - after
         analysis.subtract_count(pop_genres_count, removed_genres)  # Decrement the count for each removed genre
 
         before_edit_keywords = metadata.loc[row_index, 'keywords']  # Set before value
-        after_edit_keywords = updated_row[15]  # Set after value
+        after_edit_keywords = updated_row[10]  # Set after value
         added_keywords = list(
             set(after_edit_keywords) - set(before_edit_keywords))  # Added genres is the after - before
         analysis.add_count(pop_keys_count, added_keywords)  # Update the inserted genres count
@@ -227,7 +195,10 @@ def submit_edit(n_clicks, inputs):
         analysis.subtract_count(pop_keys_count, removed_keywords)  # Decrement the count for each removed genre
 
         metadata.loc[row_index] = updated_row
-        return display_table(metadata)
+        print("finished edit")
+        updated_table = display_table(metadata)
+        print("finished generating table")
+        return updated_table
 
 
 @app.callback(
@@ -284,13 +255,12 @@ def submit_insert(n_clicks, inputs):
         # update analytics
         global pop_genres_count, pop_keys_count
         update_start_time = time.time()
-        for i in range(1000):
-            added_genres = row[14]  # Find the appropriate genre column in row
-            pop_genres_count = analysis.add_count(pop_genres_count, added_genres)  # Update the inserted genres count
-            added_keywords = row[15]
-            pop_keys_count = analysis.add_count(pop_keys_count, added_keywords)
+        added_genres = row[9]  # Find the appropriate genre column in row
+        pop_genres_count = analysis.add_count(pop_genres_count, added_genres)  # Update the inserted genres count
+        added_keywords = row[10]
+        pop_keys_count = analysis.add_count(pop_keys_count, added_keywords)
         print("Incremental Most Popular Genre Calculation Runtime: ")
-        print("%.20f" % ((time.time() - update_start_time)/1000))
+        print(time.time() - update_start_time)
 
         global revenue_per_genre, rating_per_genre, budget_per_genre
         revenue_per_genre, rating_per_genre, budget_per_genre = analysis.update_avgs_per_genre_insert(
@@ -320,7 +290,7 @@ navbar = dbc.NavbarSimple(
                 dbc.DropdownMenuItem("Superlatives", header=True),
                 dbc.DropdownMenuItem("Most Popular Movies", href="/popular-movies"),
                 dbc.DropdownMenuItem("Most Common Keywords", href="/common-keywords"),
-                dbc.DropdownMenuItem("Most Popular Release Times", href="/popular-release"),
+                dbc.DropdownMenuItem("Most Popular Production Companies", href="/popular-companies"),
             ],
             nav=True,
             in_navbar=True,
@@ -335,16 +305,17 @@ navbar = dbc.NavbarSimple(
 
 
 def display_home():
+    headers = list(metadata.columns)
+    dd_options = [{"label": i, "value": i} for i in headers]
     return html.Div(
         children=[
-            html.H3(children='''
-                Welcome!
-            '''),
+            html.H3(children='Welcome!', style={"color": "white", "font-size": "50px", "font-weight": "bold"}),
             html.Hr(),
             html.Div(id="edit-modal-div", children=[]),
             html.Div(id="insert-modal-div", children=[]),
             dbc.Row(children=[
-                dbc.Col(dbc.Input(id="search-bar", placeholder="Column name, operator, value", type="text"), width=9),
+                dbc.Col(dcc.Dropdown(id='dropdown', options=dd_options, searchable=True, multi=True), width=3),
+                dbc.Col(dbc.Input(id="search-bar", placeholder="Search...", type="text"), width=6),
                 dbc.Col(dbc.Button('Search', id='button1', color="info", className="mr-1", block=True),
                         width={"size": 1, "order": "1"}),
                 dbc.Col(dbc.Button('Insert', id='button2', color="info", className="mr-1", block=True),
@@ -375,10 +346,10 @@ def display_rating_budget():
     # scatter_plot = px.scatter(metadata, x="budget", y="rating")
     return html.Div(
         children=[
-            html.H3('Correlation between Rating and Budget'),
+            html.H3('Correlation between Rating and Budget', style={"color": "white", "font-weight": "bold"}),
             html.Hr(),
             dcc.Graph(id='rating_budget_graph'),
-            html.H6('Budget Range:'),
+            html.H6('Budget Range:', style={"color": "white"}),
             html.Div([
                 dcc.RangeSlider(id='range_budget',
                                 min=0,
@@ -399,18 +370,17 @@ def display_rating_budget():
 )
 def update_rating_budget(budget_interval):
     new_df = metadata[(metadata['budget'] >= budget_interval[0]) & (metadata['budget'] <= budget_interval[1])]
-    scatter_plot = px.scatter(data_frame=new_df, x='budget', y='rating', height=550)
+    scatter_plot = px.scatter(data_frame=new_df, x='budget', y='rating', height=550, color_discrete_sequence=['darkorange'])
     return scatter_plot
 
 
 def display_rating_revenue():
-    # scatter_plot = px.scatter(metadata, x="revenue", y="rating")
     return html.Div(
         children=[
-            html.H3('Correlation between Rating and Revenue'),
+            html.H3('Correlation between Rating and Revenue', style={"color": "white", "font-weight": "bold"}),
             html.Hr(),
             dcc.Graph(id='rating_revenue_graph'),
-            html.H6('Revenue Range:'),
+            html.H6('Revenue Range:', style={"color": "white"}),
             html.Div([
                 dcc.RangeSlider(id='range_revenue',
                                 min=0,
@@ -431,18 +401,17 @@ def display_rating_revenue():
 )
 def update_rating_revenue(revenue_interval):
     new_df = metadata[(metadata['revenue'] >= revenue_interval[0]) & (metadata['revenue'] <= revenue_interval[1])]
-    scatter_plot = px.scatter(data_frame=new_df, x='revenue', y='rating', height=550)
+    scatter_plot = px.scatter(data_frame=new_df, x='revenue', y='rating', height=550, color_discrete_sequence=['darkorange'])
     return scatter_plot
 
 
 def display_revenue_budget():
-    # scatter_plot = px.scatter(metadata, x="budget", y="revenue")
     return html.Div(
         children=[
-            html.H3('Correlation between Revenue and Budget'),
+            html.H3('Correlation between Revenue and Budget', style={"color": "white", "font-weight": "bold"}),
             html.Hr(),
             dcc.Graph(id='revenue_budget_graph'),
-            html.H6('Budget Range:'),
+            html.H6('Budget Range:', style={"color": "white"}),
             html.Div([
                 dcc.RangeSlider(id='range_budget2',
                                 min=0,
@@ -463,24 +432,23 @@ def display_revenue_budget():
 )
 def update_revenue_budget(budget_interval):
     new_df = metadata[(metadata['budget'] >= budget_interval[0]) & (metadata['budget'] <= budget_interval[1])]
-    scatter_plot = px.scatter(data_frame=new_df, x='budget', y='revenue', height=550)
+    scatter_plot = px.scatter(data_frame=new_df, x='budget', y='revenue', height=550, color_discrete_sequence=['darkorange'])
     return scatter_plot
 
 
 def display_rating_release_time():
-    # scatter_plot = px.scatter(metadata, x="release_date", y="rating")
     return html.Div(
         children=[
-            html.H3('Correlation between Rating and Release Time'),
+            html.H3('Correlation between Rating and Release Time', style={"color": "white", "font-weight": "bold"}),
             html.Hr(),
-            dcc.RadioItems(id='rating-time-radio',
-                           options=[
-                               {'label': 'Linear', 'value': 'Linear'},
-                               {'label': 'Scatter', 'value': 'Scatter'}
-                           ],
-                           value='Scatter',
-                           labelStyle={'display': 'inline-block'}
-
+            dcc.RadioItems(
+                id='rating-time-radio',
+                options=[
+                   {'label': 'Linear', 'value': 'Linear'},
+                   {'label': 'Scatter', 'value': 'Scatter'}
+                ],
+                value='Scatter',
+                labelStyle={'display': 'inline-block'}
             ),
             dcc.Graph(id='rating-time-graph')
         ],
@@ -494,9 +462,9 @@ def display_rating_release_time():
 )
 def update_rating_release_time(value_choice):
     if value_choice == 'Scatter':
-        return px.scatter(metadata, x="release_date", y="rating")
+        return px.scatter(metadata, x="release_date", y="rating", color_discrete_sequence=['darkorange'])
     else:
-        return px.line(metadata, x="release_date", y="rating")
+        return px.line(metadata, x="release_date", y="rating", color_discrete_sequence=['darkorange'])
 
 
 def display_popularity_released_language():
@@ -505,10 +473,9 @@ def display_popularity_released_language():
     for i in metadata["spoken_languages"]:
         num_languages.append(len(i))
     languages_votes["num_languages"] = num_languages
-    scatter_plot = px.scatter(data_frame = languages_votes, x = "num_languages", y = "rating")
     return html.Div(
         children=[
-            html.H3('Correlation between Popularity and Released Language'),
+            html.H3('Correlation between Popularity and Released Language', style={"color": "white", "font-weight": "bold"}),
             html.Hr(),
             dcc.RadioItems(id='popularity-language-radio',
                            options=[
@@ -537,16 +504,13 @@ def update_popularity_released_language(chosen_value):
     languages_votes["num_languages"] = num_languages
 
     if chosen_value == 'Scatter':
-        return px.scatter(data_frame=languages_votes, x="num_languages", y="rating")
+        return px.scatter(data_frame=languages_votes, x="num_languages", y="rating", color_discrete_sequence=['darkorange'])
     else:
-        return px.line(data_frame=languages_votes, x="num_languages", y="rating")
+        return px.line(data_frame=languages_votes, x="num_languages", y="rating", color_discrete_sequence=['darkorange'])
 
 
 def display_average_revenue():
-    start_time = time.time()
     df, _ = analysis.calculate_avg_per_genre(metadata, 'revenue', revenue_per_genre)
-    print("Incremental Average Calculation Runtime: ")
-    print(time.time()-start_time)
     fig = px.bar(
         data_frame=df, x=df['genre'], y=df['average revenue'],
         title='Average Revenue by Genre', color_discrete_sequence=['darkorange']*len(df)
@@ -554,7 +518,7 @@ def display_average_revenue():
     fig.update_layout(title_x=0.5)
     return html.Div(
         children=[
-            html.H3('Average Revenue'),
+            html.H3('Average Revenue', style={"color": "white", "font-weight": "bold"}),
             html.Hr(),
             dcc.Graph(figure=fig, id='avg revenue'),
             html.H6('Sort: High to Low'),
@@ -584,13 +548,13 @@ def revenue_high_to_low(n_clicks):
 def display_average_rating():
     df, _ = analysis.calculate_avg_per_genre(metadata, 'rating', rating_per_genre)
     fig = px.bar(
-        data_frame=df, x=df['genre'], y=df['average rating'], range_y=[4.5, 6.5],
+        data_frame=df, x=df['genre'], y=df['average rating'],
         title='Average Rating by Genre', color_discrete_sequence=['darkorange'] * len(df)
     )
     fig.update_layout(title_x=0.5)
     return html.Div(
         children=[
-            html.H3('Average Rating'),
+            html.H3('Average Rating', style={"color": "white", "font-weight": "bold"}),
             html.Hr(),
             dcc.Graph(figure=fig, id='avg rating'),
             html.H6('Sort: High to Low'),
@@ -610,7 +574,7 @@ def rating_high_to_low(n_clicks):
     if n_clicks is not None:
         df, _ = analysis.calculate_avg_per_genre(metadata, 'rating', rating_per_genre)
         fig = px.bar(
-            data_frame=df, x=df['genre'], y=df['average rating'], range_y=[4.5, 6.5],
+            data_frame=df, x=df['genre'], y=df['average rating'],
             title='Average Rating by Genre', color_discrete_sequence=['darkorange'] * len(df)
         )
         fig.update_layout(xaxis={'categoryorder': 'total descending'})
@@ -626,7 +590,7 @@ def display_average_budget():
     fig.update_layout(title_x=0.5)
     return html.Div(
         children=[
-            html.H3('Average Budget'),
+            html.H3('Average Budget', style={"color": "white", "font-weight": "bold"}),
             html.Hr(),
             dcc.Graph(figure=fig, id="avg budget"),
             html.H6('Sort: High to Low'),
@@ -660,7 +624,7 @@ def display_popular_movies():
     fig.update_layout(title_x=0.5, xaxis_title="genre", yaxis_title="count")
     return html.Div(
         children=[
-            html.H3('Most Popular Movies'),
+            html.H3('Most Popular Movies', style={"color": "white", "font-weight": "bold"}),
             html.Hr(),
             dcc.Graph(figure=fig)
         ],
@@ -669,12 +633,12 @@ def display_popular_movies():
 
 
 def display_common_keywords():
-    fig = px.bar(x=list(pop_keys_count.keys()), y=list(pop_keys_count.values()), title='Most Common Keywords (TOP 15)',
-                 color_discrete_sequence=['darkorange'] * len(pop_keys_count))
+    fig = px.bar(x=list(pop_keys_count.keys())[0:15], y=list(pop_keys_count.values())[0:15],
+                 title='Most Common Keywords (TOP 15)', color_discrete_sequence=['darkorange'] * 15)
     fig.update_layout(xaxis_title="keyword", yaxis_title="count")
     return html.Div(
         children=[
-            html.H3('Most Common Keywords'),
+            html.H3('Most Common Keywords', style={"color": "white", "font-weight": "bold"}),
             html.Hr(),
             dcc.Graph(figure=fig)
         ],
@@ -682,11 +646,15 @@ def display_common_keywords():
     )
 
 
-def display_popular_release_time():
+def display_popular_production_companies():
+    fig = px.bar(x=list(pop_companies_count.keys())[0:10], y=list(pop_companies_count.values())[0:10],
+                 title='Most Popular Production Companies (TOP 10)', color_discrete_sequence=['darkorange'] * 10)
+    fig.update_layout(xaxis_title="production_companies", yaxis_title="count")
     return html.Div(
         children=[
-            html.H3('Most Popular Release Times'),
+            html.H3('Most Popular Production Companies', style={"color": "white", "font-weight": "bold"}),
             html.Hr(),
+            dcc.Graph(figure=fig)
         ],
         style={"margin-left": "5%", "margin-right": "5%", "margin-top": "5%"}
     )
@@ -716,23 +684,32 @@ def display_page(pathname):
         page = display_popular_movies()
     elif pathname == "/common-keywords":
         page = display_common_keywords()
-    elif pathname == "/popular-release":
-        page = display_popular_release_time()
+    elif pathname == "/popular-companies":
+        page = display_popular_production_companies()
     else:
         page = display_home()
     return page
 
 
-app.layout = html.Div(children=[
-    navbar,
-    html.Div([
-        # represents the URL bar, doesn't render anything
-        dcc.Location(id='url', refresh=False),
-        html.Div(id='page-content')
-    ])
-])
+app.layout = html.Div(
+    children=[
+        navbar,
+        html.Div([
+            # represents the URL bar, doesn't render anything
+            dcc.Location(id='url', refresh=False),
+            html.Div(id='page-content')
+        ])
+    ],
+    style={
+        "background-image": "url(https://static.vecteezy.com/system/resources/previews/000/157/184/original/retro-movie-cinema-vector-background.jpg)",
+        "background-repeat": "no-repeat",
+        "background-position": "center",
+        "background-size": "cover",
+        "position": "fixed",
+        "min-height": "100%",
+        "min-width": "100%"
+    }
+)
 
 if __name__ == '__main__':
-    # dataframe = utils.parse_csv("../data/keywords.csv", True)
-    # print(dataframe)
     app.run_server(debug=True)
